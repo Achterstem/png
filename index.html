@@ -1,64 +1,216 @@
 <!DOCTYPE html>
 <html lang="ru">
-<style>
-    /* Весь ваш CSS из файла */
-    :root { --bg-color: #0a0a0a; --card-bg: #141414; --border-color: #2d2d2d; --text-main: #e0e0e0; --text-dim: #888; --accent-white: #ffffff; --input-bg: #1f1f1f; --hover-bg: #2a2a2a; }
-    body { font-family: -apple-system, system-ui, sans-serif; background: var(--bg-color); color: var(--text-main); padding: 20px; display: flex; justify-content: center; margin: 0; }
-    input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-    input[type=number] { -moz-appearance: textfield; }
-    .card { background: var(--card-bg); padding: 25px; border-radius: 12px; border: 1px solid var(--border-color); box-shadow: 0 10px 40px rgba(0,0,0,0.5); width: 100%; max-width: 1100px; }
-    .grid { display: grid; grid-template-columns: 360px 1fr; gap: 20px; }
-    .section { margin-bottom: 15px; padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; background: #1a1a1a; }
-    .drop-row { display: flex; gap: 5px; margin-bottom: 5px; }
-    .drop-zone { border: 1px dashed #444; padding: 10px; text-align: center; border-radius: 8px; cursor: pointer; color: var(--text-dim); font-size: 13px; flex-grow: 1; transition: all 0.2s; }
-    .drop-zone:hover { border-color: var(--accent-white); color: var(--accent-white); background: var(--hover-bg); }
-    .btn-del-small { background: #1a1a1a; border: 1px solid #444; border-radius: 8px; cursor: pointer; padding: 0 12px; color: var(--text-main); transition: 0.2s; }
-    .btn-del-small:hover { background: #333; border-color: #888; }
-    .controls-panel { background: #000; color: #fff; padding: 15px; border-radius: 8px; margin-bottom: 10px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; border: 1px solid var(--border-color); }
-    .controls-panel label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-dim); display: flex; flex-direction: column; gap: 5px; }
-    .controls-panel input { background: var(--input-bg); border: 1px solid #333; color: #fff; padding: 8px; border-radius: 4px; width: 100%; box-sizing: border-box; text-align: center; }
-    .file-list { max-height: 300px; overflow-y: auto; border: 1px solid var(--border-color); background: #000; margin-top: 10px; border-radius: 6px; }
-    .file-item { display: flex; align-items: center; gap: 10px; padding: 8px; border-bottom: 1px solid var(--border-color); font-size: 11px; cursor: grab; background: #111; }
-    .file-item.ghost { opacity: 0.3; background: #222; }
-    .file-item img { width: 35px; height: 35px; object-fit: contain; border: 1px solid #333; background: #fff; border-radius: 4px; }
-    .file-item .drag-handle { color: #444; }
-    .file-item input { background: #222; border: 1px solid #444; color: #fff; text-align: center; }
-    #workArea { position: relative; background: #050505; border-radius: 8px; overflow: auto; display: flex; align-items: center; justify-content: center; min-height: 450px; border: 1px solid var(--border-color); }
-    #bgCanvasPreview { background-color: #fff; background-image: linear-gradient(45deg, #eee 25%, transparent 25%, transparent 75%, #eee 75%, #eee), linear-gradient(45deg, #eee 25%, white 25%, white 75%, #eee 75%, #eee); background-size: 20px 20px; background-position: 0 0, 10px 10px; box-shadow: 0 0 30px rgba(0,0,0,0.8); cursor: move; }
-    .btn { border: 1px solid #444; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 5px; transition: 0.2s; }
-    .btn-preset { background: #1a1a1a; color: var(--text-main); }
-    .btn-preset:hover { background: #252525; border-color: #666; }
-    .btn-build { background: var(--accent-white); color: #000; font-size: 14px; margin-top: 15px; border: none; text-transform: uppercase; letter-spacing: 1px; }
-    .btn-build:hover { background: #ccc; }
-    .btn-build:disabled { background: #333; color: #666; }
-    #status { margin-top: 10px; text-align: center; font-size: 12px; letter-spacing: 1px; min-height: 1.2em; color: var(--text-dim); }
-    #loaderStatus { color: var(--text-main); font-size: 11px; text-align: center; margin-top: 5px; display: none; text-transform: uppercase; }
-    #resultContainer { margin-top: 25px; padding: 20px; border: 1px solid var(--accent-white); border-radius: 8px; background: #000; display: none; text-align: center; }
-    #finalPreview { max-width: 100%; border: 1px solid #333; background: white; margin-bottom: 15px; }
-    .download-btn { display: inline-block; background: var(--accent-white); color: #000; padding: 12px 30px; text-decoration: none; border-radius: 4px; font-weight: bold; text-transform: uppercase; font-size: 12px; }
-    ::-webkit-scrollbar { width: 6px; }
-    ::-webkit-scrollbar-track { background: #000; }
-    ::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
-    ::-webkit-scrollbar-thumb:hover { background: #444; }
-</style>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>APNG Maker</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/1.0.11/pako.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/upng-js@2.1.0/UPNG.min.js"></script>
+    <style>
+        :root {
+            --bg-color: #0a0a0a;
+            --card-bg: #141414;
+            --border-color: #2d2d2d;
+            --text-main: #e0e0e0;
+            --text-dim: #888;
+            --accent-white: #ffffff;
+            --input-bg: #1f1f1f;
+            --hover-bg: #2a2a2a;
+        }
 
+        body { 
+            font-family: -apple-system, system-ui, sans-serif; 
+            background: var(--bg-color); 
+            color: var(--text-main);
+            padding: 20px; 
+            display: flex; 
+            justify-content: center; 
+            margin: 0;
+        }
+        
+        input::-webkit-outer-spin-button,
+        input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type=number] {
+            -moz-appearance: textfield;
+        }
+
+        .card { 
+            background: var(--card-bg); 
+            padding: 25px; 
+            border-radius: 12px; 
+            border: 1px solid var(--border-color);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5); 
+            width: 100%; 
+            max-width: 1100px; 
+        }
+
+        .grid { display: grid; grid-template-columns: 360px 1fr; gap: 20px; }
+        
+        .section { 
+            margin-bottom: 15px; 
+            padding: 12px; 
+            border: 1px solid var(--border-color); 
+            border-radius: 8px; 
+            background: #1a1a1a; 
+        }
+
+        .drop-row { display: flex; gap: 5px; margin-bottom: 5px; }
+        
+        .drop-zone { 
+            border: 1px dashed #444; 
+            padding: 10px; 
+            text-align: center; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            color: var(--text-dim); 
+            font-size: 13px; 
+            flex-grow: 1; 
+            transition: all 0.2s; 
+        }
+        .drop-zone:hover { border-color: var(--accent-white); color: var(--accent-white); background: var(--hover-bg); }
+
+        .btn-del-small { 
+            background: #1a1a1a; 
+            border: 1px solid #444; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            padding: 0 12px; 
+            color: var(--text-main); 
+            transition: 0.2s; 
+        }
+        .btn-del-small:hover { background: #333; border-color: #888; }
+
+        .controls-panel { 
+            background: #000; 
+            color: #fff; 
+            padding: 15px; 
+            border-radius: 8px; 
+            margin-bottom: 10px; 
+            display: grid; 
+            grid-template-columns: 1fr 1fr; 
+            gap: 12px; 
+            border: 1px solid var(--border-color);
+        }
+        .controls-panel label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-dim); display: flex; flex-direction: column; gap: 5px; }
+        .controls-panel input { 
+            background: var(--input-bg); 
+            border: 1px solid #333; 
+            color: #fff; 
+            padding: 8px; 
+            border-radius: 4px; 
+            width: 100%; 
+            box-sizing: border-box; 
+            text-align: center;
+        }
+
+        .file-list { 
+            max-height: 300px; 
+            overflow-y: auto; 
+            border: 1px solid var(--border-color); 
+            background: #000; 
+            margin-top: 10px; 
+            border-radius: 6px; 
+        }
+        .file-item { 
+            display: flex; 
+            align-items: center; 
+            gap: 10px; 
+            padding: 8px; 
+            border-bottom: 1px solid var(--border-color); 
+            font-size: 11px; 
+            cursor: grab; 
+            background: #111;
+        }
+        .file-item.ghost { opacity: 0.3; background: #222; }
+        .file-item img { width: 35px; height: 35px; object-fit: contain; border: 1px solid #333; background: #fff; border-radius: 4px; }
+        .file-item .drag-handle { color: #444; }
+        .file-item input { background: #222; border: 1px solid #444; color: #fff; text-align: center; }
+        
+        #workArea { 
+            position: relative; 
+            background: #050505; 
+            border-radius: 8px; 
+            overflow: auto; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            min-height: 450px; 
+            border: 1px solid var(--border-color); 
+        }
+        
+        #bgCanvasPreview { 
+            background-color: #fff; 
+            background-image: 
+                linear-gradient(45deg, #eee 25%, transparent 25%, transparent 75%, #eee 75%, #eee), 
+                linear-gradient(45deg, #eee 25%, white 25%, white 75%, #eee 75%, #eee); 
+            background-size: 20px 20px; 
+            background-position: 0 0, 10px 10px;
+            box-shadow: 0 0 30px rgba(0,0,0,0.8); 
+            cursor: move; 
+        }
+        
+        .btn { border: 1px solid #444; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 5px; transition: 0.2s; }
+        .btn-preset { background: #1a1a1a; color: var(--text-main); }
+        .btn-preset:hover { background: #252525; border-color: #666; }
+        
+        .btn-build { background: var(--accent-white); color: #000; font-size: 14px; margin-top: 15px; border: none; text-transform: uppercase; letter-spacing: 1px; }
+        .btn-build:hover { background: #ccc; }
+        .btn-build:disabled { background: #333; color: #666; }
+        
+        #status { margin-top: 10px; text-align: center; font-size: 12px; letter-spacing: 1px; min-height: 1.2em; color: var(--text-dim); }
+        #loaderStatus { color: var(--text-main); font-size: 11px; text-align: center; margin-top: 5px; display: none; text-transform: uppercase; }
+
+        #resultContainer { 
+            margin-top: 25px; 
+            padding: 20px; 
+            border: 1px solid var(--accent-white); 
+            border-radius: 8px; 
+            background: #000; 
+            display: none; 
+            text-align: center;
+        }
+        #finalPreview { max-width: 100%; border: 1px solid #333; background: white; margin-bottom: 15px; }
+        
+        .download-btn { 
+            display: inline-block; 
+            background: var(--accent-white); 
+            color: #000; 
+            padding: 12px 30px; 
+            text-decoration: none; 
+            border-radius: 4px; 
+            font-weight: bold; 
+            text-transform: uppercase; 
+            font-size: 12px;
+        }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #000; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #444; }
+    </style>
+</head>
 <body>
+
 <div class="card">
     <div class="grid">
         <div class="sidebar">
-            <h3 style="margin-top:0; letter-spacing: 2px; text-transform: uppercase; font-size: 18px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">APNG Maker нови</h3>
+            <h3 style="margin-top:0; letter-spacing: 2px; text-transform: uppercase; font-size: 18px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">APNG Make новииr</h3>
             <div class="section">
                 <div class="drop-row">
                     <div id="dzBg" class="drop-zone">ВЫБРАТЬ ФОН (опционально)</div>
                     <button class="btn-del-small" title="Удалить" onclick="removeBg()">🗑</button>
                 </div>
                 <div class="drop-row">
-                    <div id="dzAnim" class="drop-zone">ВЫБРАТЬ КАДРЫ / APNG</div>
+                    <div id="dzAnim" class="drop-zone">ВЫБРАТЬ КАДРЫ</div>
                     <button class="btn-del-small" title="Очистить" onclick="clearAllFrames()">🗑</button>
                 </div>
                 <input type="file" id="bgIn" style="display:none">
                 <input type="file" id="animIn" multiple style="display:none">
             </div>
+
             <div class="controls-panel">
                 <div style="grid-column: 1/3; font-size: 9px; color: #555; text-transform: uppercase; letter-spacing: 2px;">РАЗМЕР ХОЛСТА</div>
                 <label>Верх <input type="number" id="padTop" value="0"></label>
@@ -70,14 +222,21 @@
                 <label>X Pos <input type="number" id="posX" value="0"></label>
                 <label>Y Pos <input type="number" id="posY" value="0"></label>
             </div>
+
             <div class="file-list" id="fileList"></div>
+            
             <button class="btn btn-preset" onclick="applySMPreset()">ПРЕСЕТ: СМ МЕДАЛЬ</button>
             <button class="btn btn-build" id="buildBtn" disabled>СГЕНЕРИРОВАТЬ</button>
+            
             <div id="loaderStatus">LOADING...</div>
             <div id="status"></div>
         </div>
+
         <div class="main">
-            <div id="workArea"><canvas id="bgCanvasPreview"></canvas></div>
+            <div id="workArea">
+                <canvas id="bgCanvasPreview"></canvas>
+            </div>
+            
             <div id="resultContainer">
                 <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 15px;">Preview</div>
                 <img id="finalPreview">
@@ -89,7 +248,6 @@
 </div>
 
 <script>
-    // ... (переменные остаются те же)
     let bgImg = null;
     let loadedFrames = [];
     let offX = 0, offY = 0, currentFrameIdx = 0;
@@ -102,7 +260,8 @@
     const loader = document.getElementById('loaderStatus');
 
     ['padTop','padBottom','padLeft','padRight'].forEach(id => {
-        document.getElementById(id).oninput = (e) => {
+        const el = document.getElementById(id);
+        if(el) el.oninput = (e) => {
             pads[id.replace('pad','').toLowerCase()] = parseInt(e.target.value) || 0;
             updateCanvasSize();
         };
@@ -128,8 +287,8 @@
         i.onchange = () => cb(i.files);
     }
 
-    // Обработка фона (без изменений)
     setupZone('dzBg', 'bgIn', async f => {
+        if(!f.length) return;
         loader.style.display = "block";
         bgImg = await loadImage(f[0]);
         updateCanvasSize();
@@ -137,53 +296,52 @@
         if (!animationTimer) startPreviewLoop();
     });
 
-    // ОБНОВЛЕННАЯ ОБРАБОТКА КАДРОВ
     setupZone('dzAnim', 'animIn', async f => {
+        if(!f.length) return;
+        if (typeof UPNG === 'undefined') {
+            alert("Библиотека UPNG еще не загружена. Пожалуйста, подождите секунду или обновите страницу.");
+            return;
+        }
         loader.style.display = "block";
-        const sortedFiles = Array.from(f).sort((a,b) => a.name.localeCompare(b.name, undefined, {numeric:true}));
+        const sorted = Array.from(f).sort((a,b) => a.name.localeCompare(b.name, undefined, {numeric:true}));
         
-        for (let file of sortedFiles) {
+        for(let file of sorted) {
             const buffer = await file.arrayBuffer();
             const imgData = UPNG.decode(buffer);
             
-            // Если в файле больше 1 кадра - это APNG
             if (imgData.frames && imgData.frames.length > 1) {
-                const frames = UPNG.toRGBA8(imgData);
-                for (let i = 0; i < frames.length; i++) {
-                    const rgba = new Uint8ClampedArray(frames[i]);
-                    const frameImg = await rgbaToImage(rgba, imgData.width, imgData.height);
+                const framesRGBA = UPNG.toRGBA8(imgData);
+                for (let i = 0; i < framesRGBA.length; i++) {
+                    const rgba = new Uint8ClampedArray(framesRGBA[i]);
+                    const fImg = await rgbaToImage(rgba, imgData.width, imgData.height);
                     loadedFrames.push({ 
-                        img: frameImg, 
-                        name: `${file.name}_f${i}`,
-                        delay: imgData.frames[i].delay / 10 // конвертируем в ваши единицы (10ms)
+                        img: fImg, 
+                        name: `${file.name}_${i}`, 
+                        delay: Math.round(imgData.frames[i].delay / 10) 
                     });
                 }
             } else {
-                // Обычное изображение
                 const img = await loadImage(file);
                 loadedFrames.push({ img, name: file.name, delay: 10 });
             }
         }
-        
         updateCanvasSize();
         renderList();
         loader.style.display = "none";
         if (!animationTimer) startPreviewLoop();
     });
 
-    // Вспомогательная функция для конвертации RGBA в Image объект
     function rgbaToImage(rgba, w, h) {
         return new Promise(res => {
-            const canvas = document.createElement('canvas');
-            canvas.width = w;
-            canvas.height = h;
-            const ctx = canvas.getContext('2d');
-            const imgData = ctx.createImageData(w, h);
-            imgData.data.set(rgba);
-            ctx.putImageData(imgData, 0, 0);
-            const i = new Image();
-            i.onload = () => res(i);
-            i.src = canvas.toDataURL();
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = w; tempCanvas.height = h;
+            const tCtx = tempCanvas.getContext('2d');
+            const iData = tCtx.createImageData(w, h);
+            iData.data.set(rgba);
+            tCtx.putImageData(iData, 0, 0);
+            const img = new Image();
+            img.onload = () => res(img);
+            img.src = tempCanvas.toDataURL();
         });
     }
 
@@ -204,9 +362,9 @@
                 ctx.strokeRect(offX + pads.left, offY + pads.top, frame.img.width, frame.img.height);
                 
                 const delayInputs = document.querySelectorAll('.delay-input');
-                const delayValue = delayInputs[currentFrameIdx] ? parseInt(delayInputs[currentFrameIdx].value) : 10;
+                const delayValue = delayInputs[currentFrameIdx] ? (parseInt(delayInputs[currentFrameIdx].value) || 10) : 10;
                 currentFrameIdx = (currentFrameIdx + 1) % loadedFrames.length;
-                animationTimer = setTimeout(loop, Math.max(20, delayValue * 10));
+                animationTimer = setTimeout(loop, delayValue * 10);
             } else { animationTimer = setTimeout(loop, 100); }
         };
         loop();
@@ -224,8 +382,7 @@
             </div>
         `).join('');
         
-        const items = container.querySelectorAll('.file-item');
-        items.forEach(item => {
+        container.querySelectorAll('.file-item').forEach(item => {
             item.addEventListener('dragstart', handleDragStart);
             item.addEventListener('dragover', handleDragOver);
             item.addEventListener('drop', handleDrop);
@@ -234,7 +391,6 @@
         document.getElementById('buildBtn').disabled = loadedFrames.length === 0;
     }
 
-    // Остальные функции (Drag & Drop, Presets, Build) остаются без изменений как в вашем коде
     function handleDragStart(e) { dragSrcEl = this; e.dataTransfer.effectAllowed = 'move'; this.classList.add('ghost'); }
     function handleDragOver(e) { if (e.preventDefault) e.preventDefault(); return false; }
     function handleDrop(e) {
@@ -309,7 +465,10 @@
             document.getElementById('resultContainer').style.display = "block";
             document.getElementById('resultContainer').scrollIntoView({behavior:'smooth'});
             st.innerText = " ";
-        } catch (e) { st.innerText = "ERROR"; }
+        } catch (e) { 
+            console.error(e);
+            st.innerText = "ERROR"; 
+        }
     };
 
     function loadImage(f) {
