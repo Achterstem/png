@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>APNG Animated Positioner v2.2</title>
+    <title>APNG Animated Positioner v2.3</title>
     <script src="https://cdn.jsdelivr.net/npm/pako@1.0.11/dist/pako.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/upng-js@2.1.0/UPNG.min.js"></script>
     <style>
@@ -13,11 +13,10 @@
         
         .section { margin-bottom: 15px; padding: 12px; border: 1px solid #eef0f2; border-radius: 8px; background: #fafafa; }
         .drop-zone { border: 2px dashed #ccc; padding: 10px; text-align: center; border-radius: 8px; cursor: pointer; color: #777; font-size: 13px; transition: 0.3s; }
-        .drop-zone.highlight { border-color: #007bff; background: #e7f3ff; }
-        .drop-zone.loading { background: #fff3cd; color: #856404; border-color: #ffeeba; pointer-events: none; }
+        .drop-zone:hover { border-color: #007bff; background: #f0f7ff; }
         
         .controls-panel { background: #222; color: #fff; padding: 12px; border-radius: 8px; margin-bottom: 10px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; box-sizing: border-box; }
-        .controls-panel label { font-size: 11px; display: flex; flex-direction: column; gap: 4px; overflow: hidden; }
+        .controls-panel label { font-size: 11px; display: flex; flex-direction: column; gap: 4px; }
         .controls-panel input { 
             background: #444; border: 1px solid #555; color: #fff; padding: 6px; border-radius: 4px; 
             width: 100%; box-sizing: border-box; min-width: 0; 
@@ -38,8 +37,10 @@
         .btn { border: none; padding: 10px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 5px; }
         .btn-preset { background: #6f42c1; color: white; }
         .btn-build { background: #28a745; color: white; font-size: 16px; margin-top: 15px; }
-        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
         
+        #status { margin-top: 10px; text-align: center; font-size: 14px; font-weight: bold; min-height: 1.2em; }
+        #loaderStatus { color: #856404; font-size: 12px; text-align: center; margin-top: 5px; display: none; }
+
         #resultContainer { margin-top: 20px; padding: 20px; border: 2px solid #28a745; border-radius: 8px; background: #f6fff6; display: none; }
         #finalPreview { max-width: 100%; box-shadow: 0 4px 10px rgba(0,0,0,0.1); border: 1px solid #ccc; background: white; }
         .download-btn { display: inline-block; margin-top: 15px; background: #007bff; color: white; padding: 12px 25px; text-decoration: none; border-radius: 6px; font-weight: bold; }
@@ -73,7 +74,9 @@
             <div class="file-list" id="fileList"></div>
             <button class="btn btn-preset" onclick="applySMPreset()">Пресет "СМ Медали"</button>
             <button class="btn btn-build" id="buildBtn" disabled>СОБРАТЬ APNG</button>
-            <div id="status" style="margin-top:10px; text-align:center; font-size: 14px; font-weight:bold;"></div>
+            
+            <div id="loaderStatus">⌛ Идет загрузка файлов...</div>
+            <div id="status"></div>
         </div>
 
         <div class="main">
@@ -100,6 +103,7 @@
 
     const canvas = document.getElementById('bgCanvasPreview');
     const ctx = canvas.getContext('2d');
+    const loader = document.getElementById('loaderStatus');
 
     ['padTop','padBottom','padLeft','padRight'].forEach(id => {
         document.getElementById(id).oninput = (e) => {
@@ -122,45 +126,42 @@
         canvas.height = h + pads.top + pads.bottom;
     }
 
+    function setupZone(id, inId, cb) {
+        const z = document.getElementById(id), i = document.getElementById(inId);
+        z.onclick = () => i.click();
+        z.ondragover = e => { e.preventDefault(); z.style.borderColor = "#007bff"; };
+        z.ondragleave = () => z.style.borderColor = "#ccc";
+        z.ondrop = e => { e.preventDefault(); z.style.borderColor = "#ccc"; cb(e.dataTransfer.files); };
+        i.onchange = () => cb(i.files);
+    }
+
     setupZone('dzBg', 'bgIn', async f => {
-        const zone = document.getElementById('dzBg');
-        zone.classList.add('loading');
-        zone.innerText = "⌛ Загрузка фона...";
+        loader.style.display = "block";
+        loader.innerText = "⌛ Загрузка фона...";
         bgImg = await loadImage(f[0]);
         updateCanvasSize();
-        zone.classList.remove('loading');
-        zone.innerText = "✅ Фон загружен";
+        loader.style.display = "none";
         if (!animationTimer) startPreviewLoop();
     });
 
     setupZone('dzAnim', 'animIn', async f => {
-        const zone = document.getElementById('dzAnim');
-        const btn = document.getElementById('buildBtn');
-        zone.classList.add('loading');
-        zone.innerText = "⌛ Загрузка кадров...";
-        btn.disabled = true;
-
+        loader.style.display = "block";
+        loader.innerText = `⌛ Загрузка кадров (0/${f.length})...`;
+        
         const sorted = Array.from(f).sort((a,b) => a.name.localeCompare(b.name, undefined, {numeric:true}));
         animationFiles = animationFiles.concat(sorted);
         
-        const newFrames = await Promise.all(sorted.map(file => loadImage(file)));
-        loadedFrames = loadedFrames.concat(newFrames);
+        for(let i=0; i<sorted.length; i++) {
+            const img = await loadImage(sorted[i]);
+            loadedFrames.push(img);
+            loader.innerText = `⌛ Загрузка кадров (${i+1}/${sorted.length})...`;
+        }
         
         updateCanvasSize();
         renderList();
-        zone.classList.remove('loading');
-        zone.innerText = "✅ Кадры добавлены";
+        loader.style.display = "none";
         if (!animationTimer) startPreviewLoop();
     });
-
-    function setupZone(id, inId, cb) {
-        const z = document.getElementById(id), i = document.getElementById(inId);
-        z.onclick = () => i.click();
-        z.ondragover = e => { e.preventDefault(); z.classList.add('highlight'); };
-        z.ondragleave = () => z.classList.remove('highlight');
-        z.ondrop = e => { e.preventDefault(); z.classList.remove('highlight'); cb(e.dataTransfer.files); };
-        i.onchange = () => cb(i.files);
-    }
 
     function startPreviewLoop() {
         const loop = () => {
@@ -175,9 +176,9 @@
                 ctx.strokeRect(offX + pads.left, offY + pads.top, img.width, img.height);
                 
                 const delayInputs = document.querySelectorAll('.delay-input');
-                const delay = (delayInputs[currentFrameIdx] ? parseInt(delayInputs[currentFrameIdx].value) : 10) * 10;
+                const delayValue = delayInputs[currentFrameIdx] ? parseInt(delayInputs[currentFrameIdx].value) : 10;
                 currentFrameIdx = (currentFrameIdx + 1) % loadedFrames.length;
-                animationTimer = setTimeout(loop, Math.max(20, delay));
+                animationTimer = setTimeout(loop, Math.max(20, delayValue * 10));
             } else {
                 animationTimer = setTimeout(loop, 100);
             }
@@ -227,13 +228,15 @@
             }
             input.value = d;
         });
-        document.getElementById('status').innerText = "Пресет применен!";
-        document.getElementById('status').style.color = "purple";
+        const st = document.getElementById('status');
+        st.innerText = "Пресет применен!";
+        st.style.color = "purple";
+        setTimeout(() => st.innerText = "", 3000);
     }
 
     document.getElementById('buildBtn').onclick = async () => {
         const st = document.getElementById('status');
-        st.innerText = "⏳ Сборка...";
+        st.innerText = "⏳ Сборка APNG...";
         st.style.color = "orange";
         try {
             const delays = Array.from(document.querySelectorAll('.delay-input')).map(i => (parseInt(i.value)||10)*10);
@@ -252,14 +255,15 @@
             const url = URL.createObjectURL(blob);
             document.getElementById('finalPreview').src = url;
             document.getElementById('dlBtn').href = url;
-            document.getElementById('dlBtn').download = "result.png";
+            document.getElementById('dlBtn').download = "medal_result.png";
             document.getElementById('finalSize').innerText = "Вес файла: " + (blob.size/1024).toFixed(2) + " КБ";
             document.getElementById('resultContainer').style.display = "block";
             document.getElementById('resultContainer').scrollIntoView({behavior:'smooth'});
             st.innerText = "✅ Готово!";
             st.style.color = "green";
         } catch (e) { 
-            st.innerText = "❌ Ошибка"; 
+            st.innerText = "❌ Ошибка при сборке"; 
+            st.style.color = "red";
         }
     };
 
