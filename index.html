@@ -6,7 +6,7 @@
     <title>APNG || GIF Maker</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/1.0.11/pako.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/upng-js@2.1.0/UPNG.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/gifshot@0.4.5/build/gifshot.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gifshot/0.4.5/gifshot.min.js"></script>
     <style>
         :root {
             --bg-color: #0a0a0a;
@@ -157,13 +157,19 @@
         .btn-preset { background: #1a1a1a; color: var(--text-main); }
         .btn-preset:hover { background: #252525; border-color: #666; }
         
-        .btn-build { background: var(--accent-white); color: #000; font-size: 14px; margin-top: 15px; border: none; text-transform: uppercase; letter-spacing: 1px; }
+        /* Объединенный стиль для кнопок генерации */
+        .btn-build { 
+            background: var(--accent-white); 
+            color: #000; 
+            font-size: 14px; 
+            margin-top: 10px; 
+            border: none; 
+            text-transform: uppercase; 
+            letter-spacing: 1px; 
+        }
         .btn-build:hover { background: #ccc; }
-        .btn-build:disabled { background: #333; color: #666; }
+        .btn-build:disabled { background: #333; color: #666; cursor: not-allowed; }
         
-        .btn-gif { background: #333; color: #fff; border: 1px solid #555; margin-top: 10px; }
-        .btn-gif:hover { background: #444; }
-
         #status { margin-top: 10px; text-align: center; font-size: 12px; letter-spacing: 1px; min-height: 1.2em; color: var(--text-dim); }
         #loaderStatus { color: var(--text-main); font-size: 11px; text-align: center; margin-top: 5px; display: none; text-transform: uppercase; }
 
@@ -201,7 +207,7 @@
 <div class="card">
     <div class="grid">
         <div class="sidebar">
-            <h3 style="margin-top:0; letter-spacing: 2px; text-transform: uppercase; font-size: 18px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">APNG/GIF Maker</h3>
+            <h3 style="margin-top:0; letter-spacing: 2px; text-transform: uppercase; font-size: 18px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">APNG & GIF Maker</h3>
             <div class="section">
                 <div class="drop-row">
                     <div id="dzBg" class="drop-zone">ВЫБРАТЬ ФОН (опционально)</div>
@@ -231,7 +237,7 @@
             
             <button class="btn btn-preset" onclick="applySMPreset()">ПРЕСЕТ: СМ МЕДАЛЬ</button>
             <button class="btn btn-build" id="buildBtn" disabled>СГЕНЕРИРОВАТЬ APNG</button>
-            <button class="btn btn-gif" id="gifBtn" disabled>СГЕНЕРИРОВАТЬ GIF</button>
+            <button class="btn btn-build" id="gifBtn" disabled>СГЕНЕРИРОВАТЬ GIF</button>
             
             <div id="loaderStatus">LOADING...</div>
             <div id="status"></div>
@@ -475,8 +481,12 @@
         } catch (e) { console.error(e); st.innerText = "ERROR"; }
     };
 
-    // НОВАЯ ФУНКЦИЯ: СБОРКА GIF
+    // СБОРКА GIF
     document.getElementById('gifBtn').onclick = async () => {
+        if (typeof gifshot === 'undefined') {
+            alert("Библиотека GIFshot еще загружается. Попробуйте снова через секунду.");
+            return;
+        }
         const st = document.getElementById('status');
         st.innerText = "PROCESSING GIF...";
         try {
@@ -493,7 +503,6 @@
                 frameImages.push(temp.toDataURL('image/png'));
             }
 
-            // Берем среднюю задержку для GIF (библиотека gifshot лучше работает с фиксированным интервалом)
             const avgDelay = (parseInt(delayInputs[0].value) || 10) / 100;
 
             gifshot.createGIF({
@@ -513,6 +522,7 @@
                     document.getElementById('resultContainer').scrollIntoView({behavior:'smooth'});
                     st.innerText = "SUCCESS (GIF)";
                 } else {
+                    console.error(obj.error);
                     st.innerText = "GIF ERROR";
                 }
             });
