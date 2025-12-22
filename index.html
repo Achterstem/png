@@ -4,9 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>APNG || GIF Maker</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/1.0.11/pako.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/pako@1.0.11/dist/pako.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/upng-js@2.1.0/UPNG.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gifshot/0.4.5/gifshot.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gifshot@0.4.5/build/gifshot.min.js"></script>
+    
     <style>
         :root {
             --bg-color: #0a0a0a;
@@ -157,7 +158,7 @@
         .btn-preset { background: #1a1a1a; color: var(--text-main); }
         .btn-preset:hover { background: #252525; border-color: #666; }
         
-        /* Объединенный стиль для кнопок генерации */
+        /* Кнопки генерации - одинаковый стиль */
         .btn-build { 
             background: var(--accent-white); 
             color: #000; 
@@ -207,7 +208,7 @@
 <div class="card">
     <div class="grid">
         <div class="sidebar">
-            <h3 style="margin-top:0; letter-spacing: 2px; text-transform: uppercase; font-size: 18px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">APNG & GIF Maker</h3>
+            <h3 style="margin-top:0; letter-spacing: 2px; text-transform: uppercase; font-size: 18px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">APNG & GIF Maker ии</h3>
             <div class="section">
                 <div class="drop-row">
                     <div id="dzBg" class="drop-zone">ВЫБРАТЬ ФОН (опционально)</div>
@@ -310,7 +311,7 @@
     setupZone('dzAnim', 'animIn', async f => {
         if(!f.length) return;
         if (typeof UPNG === 'undefined') {
-            alert("Библиотека UPNG еще не загружена.");
+            alert("Библиотека UPNG еще загружается.");
             return;
         }
         loader.style.display = "block";
@@ -484,7 +485,7 @@
     // СБОРКА GIF
     document.getElementById('gifBtn').onclick = async () => {
         if (typeof gifshot === 'undefined') {
-            alert("Библиотека GIFshot еще загружается. Попробуйте снова через секунду.");
+            alert("Библиотека GIFshot еще не готова. Подождите пару секунд.");
             return;
         }
         const st = document.getElementById('status');
@@ -503,14 +504,16 @@
                 frameImages.push(temp.toDataURL('image/png'));
             }
 
-            const avgDelay = (parseInt(delayInputs[0].value) || 10) / 100;
+            // GIFshot использует интервал в секундах (10 = 0.1s)
+            const firstDelay = (parseInt(delayInputs[0].value) || 10) / 100;
 
             gifshot.createGIF({
                 images: frameImages,
                 gifWidth: W,
                 gifHeight: H,
-                interval: avgDelay,
-                numWorkers: 2
+                interval: firstDelay,
+                numWorkers: 2,
+                sampleInterval: 10
             }, function(obj) {
                 if(!obj.error) {
                     const finalUrl = obj.image;
@@ -522,8 +525,7 @@
                     document.getElementById('resultContainer').scrollIntoView({behavior:'smooth'});
                     st.innerText = "SUCCESS (GIF)";
                 } else {
-                    console.error(obj.error);
-                    st.innerText = "GIF ERROR";
+                    st.innerText = "GIF ERROR: " + obj.error;
                 }
             });
         } catch (e) { console.error(e); st.innerText = "ERROR"; }
