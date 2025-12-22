@@ -3,96 +3,113 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>APNG Visual Positioner</title>
+    <title>APNG Medal Master: Canvas Extender</title>
     <script src="https://cdn.jsdelivr.net/npm/pako@1.0.11/dist/pako.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/upng-js@2.1.0/UPNG.min.js"></script>
     <style>
         body { font-family: -apple-system, system-ui, sans-serif; background: #f0f2f5; padding: 20px; display: flex; justify-content: center; }
-        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.1); width: 100%; max-width: 800px; }
-        .section { margin-bottom: 15px; padding: 12px; border: 1px solid #eef0f2; border-radius: 8px; }
-        .drop-zone { border: 2px dashed #ccc; padding: 15px; text-align: center; border-radius: 8px; cursor: pointer; color: #777; }
+        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.1); width: 100%; max-width: 900px; }
+        .grid { display: grid; grid-template-columns: 300px 1fr; gap: 20px; }
+        .section { margin-bottom: 15px; padding: 12px; border: 1px solid #eef0f2; border-radius: 8px; background: #fafafa; }
+        .drop-zone { border: 2px dashed #ccc; padding: 10px; text-align: center; border-radius: 8px; cursor: pointer; color: #777; font-size: 13px; }
         .drop-zone.highlight { border-color: #007bff; background: #e7f3ff; }
         
-        /* Контейнер для визуальной настройки */
-        #workArea { position: relative; margin: 20px 0; background: #eee; border-radius: 8px; overflow: hidden; display: flex; align-items: center; justify-content: center; min-height: 200px; cursor: crosshair; }
-        #bgCanvasPreview { box-shadow: 0 0 10px rgba(0,0,0,0.2); background: white; }
+        /* Холст и управление */
+        #workArea { position: relative; background: #d1d1d1; border-radius: 8px; overflow: auto; display: flex; align-items: center; justify-content: center; min-height: 400px; border: 1px solid #ccc; }
+        #bgCanvasPreview { background-image: linear-gradient(45deg, #eee 25%, transparent 25%, transparent 75%, #eee 75%, #eee), linear-gradient(45deg, #eee 25%, white 25%, white 75%, #eee 75%, #eee); background-size: 20px 20px; background-position: 0 0, 10px 10px; box-shadow: 0 0 15px rgba(0,0,0,0.3); }
         
-        .controls-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
-        .file-list { max-height: 200px; overflow-y: auto; border: 1px solid #eee; margin-bottom: 15px; }
-        .file-item { display: flex; align-items: center; gap: 8px; padding: 5px; border-bottom: 1px solid #eee; font-size: 12px; }
-        .file-item img { width: 30px; height: 30px; object-fit: contain; }
+        .pad-controls { display: grid; grid-template-columns: repeat(2, 1fr); gap: 5px; margin-bottom: 10px; background: #333; color: white; padding: 10px; border-radius: 6px; }
+        .pad-controls label { font-size: 11px; display: flex; justify-content: space-between; align-items: center; }
+        .pad-controls input { width: 45px; }
+
+        .file-list { max-height: 180px; overflow-y: auto; border: 1px solid #eee; margin-top: 10px; background: white; }
+        .file-item { display: flex; align-items: center; gap: 5px; padding: 4px; border-bottom: 1px solid #eee; font-size: 11px; }
+        .file-item img { width: 25px; height: 25px; object-fit: contain; }
         
-        .btn { border: none; padding: 10px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        .btn { border: none; padding: 10px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 5px; }
         .btn-preset { background: #6f42c1; color: white; }
-        .btn-build { background: #28a745; color: white; width: 100%; font-size: 16px; }
-        
-        #posControls { background: #333; color: white; padding: 10px; border-radius: 6px; display: flex; gap: 15px; align-items: center; margin-bottom: 10px; }
-        input[type="number"] { width: 60px; }
+        .btn-build { background: #28a745; color: white; font-size: 16px; margin-top: 15px; }
     </style>
 </head>
 <body>
 
 <div class="card">
-    <h2>Сборщик APNG: Настройка позиции</h2>
+    <div class="grid">
+        <div class="sidebar">
+            <h3>Настройки</h3>
+            
+            <div class="section">
+                <span style="font-weight:bold; font-size:12px;">1. Файлы</span>
+                <div id="dzBg" class="drop-zone">Фон<input type="file" id="bgIn" style="display:none"></div>
+                <div id="dzAnim" class="drop-zone" style="margin-top:5px;">Кадры<input type="file" id="animIn" multiple style="display:none"></div>
+            </div>
 
-    <div class="controls-grid">
-        <div class="section">
-            <span class="section-title">1. Фон (любой размер)</span>
-            <div id="dzBg" class="drop-zone">Клик или Drag фон<input type="file" id="bgIn" style="display:none"></div>
+            <div class="pad-controls">
+                <div style="grid-column: 1/3; font-weight:bold; border-bottom:1px solid #555; margin-bottom:5px; padding-bottom:2px;">Добавить поля (px)</div>
+                <label>Сверху: <input type="number" id="padTop" value="0"></label>
+                <label>Снизу: <input type="number" id="padBottom" value="0"></label>
+                <label>Слева: <input type="number" id="padLeft" value="0"></label>
+                <label>Справа: <input type="number" id="padRight" value="0"></label>
+            </div>
+
+            <div class="pad-controls" style="background:#444;">
+                <div style="grid-column: 1/3; font-weight:bold;">Позиция кадра:</div>
+                <label>X: <input type="number" id="posX" value="0"></label>
+                <label>Y: <input type="number" id="posY" value="0"></label>
+            </div>
+
+            <div class="file-list" id="fileList"></div>
+            
+            <button class="btn btn-preset" onclick="applySMPreset()">Пресет СМ</button>
+            <button class="btn btn-build" id="buildBtn" disabled>Собрать APNG</button>
+            <div id="status" style="font-size:12px; text-align:center; margin-top:5px;"></div>
         </div>
-        <div class="section">
-            <span class="section-title">2. Кадры анимации</span>
-            <div id="dzAnim" class="drop-zone">Клик или Drag кадры<input type="file" id="animIn" multiple style="display:none"></div>
+
+        <div class="main">
+            <div id="workArea">
+                <canvas id="bgCanvasPreview"></canvas>
+            </div>
+            
+            <div id="resultContainer" style="display:none; text-align:center;">
+                <hr>
+                <div id="finalSize" style="font-weight:bold; color:#28a745;"></div>
+                <a id="dlBtn" style="color:blue; font-weight:bold; text-decoration:none;" href="#">⬇ Скачать готовый файл</a>
+            </div>
         </div>
-    </div>
-
-    <div id="posControls">
-        <span>Смещение анимации:</span>
-        <label>X: <input type="number" id="posX" value="0"></label>
-        <label>Y: <input type="number" id="posY" value="0"></label>
-        <small>(Можно двигать мышкой по картинке)</small>
-    </div>
-
-    <div id="workArea">
-        <canvas id="bgCanvasPreview"></canvas>
-    </div>
-
-    <div id="fileList" class="file-list"></div>
-
-    <div class="controls-grid" style="grid-template-columns: 2fr 1fr;">
-        <button class="btn btn-preset" onclick="applySMPreset()">Пресет СМ медали</button>
-        <button class="btn" style="background:#dc3545; color:white;" onclick="location.reload()">Очистить всё</button>
-    </div>
-
-    <button id="buildBtn" class="btn btn-build" disabled>Собрать готовый APNG</button>
-    <div id="status" style="text-align:center; margin-top:10px;"></div>
-
-    <div id="resultContainer" style="display:none; text-align:center; border-top:2px solid #eee; margin-top:20px; padding-top:10px;">
-        <div id="finalSize" style="font-weight:bold; margin-bottom:10px;"></div>
-        <img id="finalPreview" style="max-width:100%; border:1px solid #ccc;"><br><br>
-        <a id="dlBtn" class="download-btn" style="background:#007bff; color:white; padding:10px 20px; text-decoration:none; border-radius:6px; font-weight:bold;">Скачать результат</a>
     </div>
 </div>
 
 <script>
-    let animationFiles = [];
-    let bgImg = null;
-    let animPreviewImg = null;
+    let animationFiles = [], bgImg = null, animPreviewImg = null;
     let offX = 0, offY = 0;
     const canvas = document.getElementById('bgCanvasPreview');
     const ctx = canvas.getContext('2d');
 
-    // Логика загрузки
+    const pads = { top: 0, bottom: 0, left: 0, right: 0 };
+
+    // Обработка полей
+    ['padTop','padBottom','padLeft','padRight'].forEach(id => {
+        document.getElementById(id).oninput = (e) => {
+            const side = id.replace('pad', '').toLowerCase();
+            pads[side] = parseInt(e.target.value) || 0;
+            updateCanvasSize();
+        };
+    });
+
+    function updateCanvasSize() {
+        if (!bgImg) return;
+        canvas.width = bgImg.width + pads.left + pads.right;
+        canvas.height = bgImg.height + pads.top + pads.bottom;
+        drawPreview();
+    }
+
     setupZone('dzBg', 'bgIn', async f => {
         bgImg = await loadImage(f[0]);
-        canvas.width = bgImg.width;
-        canvas.height = bgImg.height;
-        drawPreview();
+        updateCanvasSize();
     });
 
     setupZone('dzAnim', 'animIn', async f => {
-        const newFiles = Array.from(f);
-        animationFiles = animationFiles.concat(newFiles);
+        animationFiles = animationFiles.concat(Array.from(f));
         animationFiles.sort((a,b) => a.name.localeCompare(b.name, undefined, {numeric:true}));
         if (animationFiles.length > 0) animPreviewImg = await loadImage(animationFiles[0]);
         renderList();
@@ -108,23 +125,23 @@
         i.onchange = () => cb(i.files);
     }
 
-    // Визуальная отрисовка превью
     function drawPreview() {
         if (!bgImg) return;
         ctx.clearRect(0,0,canvas.width,canvas.height);
-        ctx.drawImage(bgImg, 0, 0);
+        // Рисуем фон со смещением полей
+        ctx.drawImage(bgImg, pads.left, pads.top);
         
         if (animPreviewImg) {
-            ctx.globalAlpha = 0.7; // Делаем анимацию чуть прозрачной в превью для удобства позиционирования
-            ctx.drawImage(animPreviewImg, offX, offY);
+            ctx.globalAlpha = 0.8;
+            ctx.drawImage(animPreviewImg, offX + pads.left, offY + pads.top);
             ctx.globalAlpha = 1.0;
-            // Рисуем рамку вокруг перемещаемого объекта
             ctx.strokeStyle = '#007bff';
-            ctx.strokeRect(offX, offY, animPreviewImg.width, animPreviewImg.height);
+            ctx.lineWidth = 2;
+            ctx.strokeRect(offX + pads.left, offY + pads.top, animPreviewImg.width, animPreviewImg.height);
         }
     }
 
-    // Управление мышкой
+    // Dragging logic
     let isDragging = false;
     canvas.onmousedown = () => isDragging = true;
     window.onmouseup = () => isDragging = false;
@@ -133,27 +150,26 @@
             const rect = canvas.getBoundingClientRect();
             const scaleX = canvas.width / rect.width;
             const scaleY = canvas.height / rect.height;
-            offX = Math.round((e.clientX - rect.left) * scaleX - animPreviewImg.width/2);
-            offY = Math.round((e.clientY - rect.top) * scaleY - animPreviewImg.height/2);
+            offX = Math.round((e.clientX - rect.left) * scaleX - pads.left - animPreviewImg.width/2);
+            offY = Math.round((e.clientY - rect.top) * scaleY - pads.top - animPreviewImg.height/2);
             document.getElementById('posX').value = offX;
             document.getElementById('posY').value = offY;
             drawPreview();
         }
     };
 
-    document.getElementById('posX').oninput = (e) => { offX = parseInt(e.target.value) || 0; drawPreview(); };
-    document.getElementById('posY').oninput = (e) => { offY = parseInt(e.target.value) || 0; drawPreview(); };
+    document.getElementById('posX').oninput = e => { offX = parseInt(e.target.value)||0; drawPreview(); };
+    document.getElementById('posY').oninput = e => { offY = parseInt(e.target.value)||0; drawPreview(); };
 
     function renderList() {
-        const c = document.getElementById('fileList');
-        c.innerHTML = animationFiles.map((f, i) => `
+        document.getElementById('fileList').innerHTML = animationFiles.map((f, i) => `
             <div class="file-item">
                 <b>${i+1}</b> <img src="${URL.createObjectURL(f)}">
-                <span style="flex-grow:1">${f.name}</span>
-                <input type="number" class="delay-input" value="10"> <small>1/100s</small>
+                <span style="flex-grow:1; overflow:hidden;">${f.name}</span>
+                <input type="number" class="delay-input" value="10" style="width:35px">
             </div>
         `).join('');
-        document.getElementById('buildBtn').disabled = (animationFiles.length === 0 || !bgImg);
+        document.getElementById('buildBtn').disabled = !bgImg || animationFiles.length === 0;
     }
 
     function applySMPreset() {
@@ -161,15 +177,13 @@
         const count = animationFiles.length;
         if (count !== 19 && count !== 20) return alert("Нужно 19 или 20 кадров!");
         inputs.forEach((input, i) => {
-            const n = i + 1; let d = 10;
+            const n = i+1; let d = 10;
             if (count === 19) {
-                if ([2,9,11,18].includes(n)) d = 8;
-                else if ([3,4,5,6,7,8,12,13,14,15,16,17].includes(n)) d = 16;
-                else if (n === 1) d = 25; else if (n === 19) d = 66; else if (n === 10) d = 100;
+                if([2,9,11,18].includes(n)) d=8; else if([3,4,5,6,7,8,12,13,14,15,16,17].includes(n)) d=16;
+                else if(n===1) d=25; else if(n===19) d=66; else if(n===10) d=100;
             } else {
-                if ([2,6,7,10,12,19].includes(n)) d = 8;
-                else if ([3,4,5,8,9,13,14,15,16,17,18].includes(n)) d = 16;
-                else if (n === 1) d = 25; else if (n === 20) d = 66; else if (n === 11) d = 100;
+                if([2,6,7,10,12,19].includes(n)) d=8; else if([3,4,5,8,9,13,14,15,16,17,18].includes(n)) d=16;
+                else if(n===1) d=25; else if(n===20) d=66; else if(n===11) d=100;
             }
             input.value = d;
         });
@@ -177,40 +191,33 @@
 
     document.getElementById('buildBtn').onclick = async () => {
         const st = document.getElementById('status');
-        st.innerText = "⏳ Идет сборка...";
+        st.innerText = "⏳ Собираем...";
         try {
             const delays = Array.from(document.querySelectorAll('.delay-input')).map(i => (parseInt(i.value)||10)*10);
             const frames = [];
-            const finalW = canvas.width, finalH = canvas.height;
+            const W = canvas.width, H = canvas.height;
 
             for (let f of animationFiles) {
                 const img = await loadImage(f);
-                const tempCanvas = document.createElement('canvas');
-                tempCanvas.width = finalW; tempCanvas.height = finalH;
-                const tCtx = tempCanvas.getContext('2d');
-                tCtx.drawImage(bgImg, 0, 0);
-                tCtx.drawImage(img, offX, offY);
-                frames.push(tCtx.getImageData(0,0,finalW,finalH).data.buffer);
+                const temp = document.createElement('canvas');
+                temp.width = W; temp.height = H;
+                const tCtx = temp.getContext('2d');
+                tCtx.drawImage(bgImg, pads.left, pads.top);
+                tCtx.drawImage(img, offX + pads.left, offY + pads.top);
+                frames.push(tCtx.getImageData(0,0,W,H).data.buffer);
             }
 
-            const resBuf = UPNG.encode(frames, finalW, finalH, 0, delays);
+            const resBuf = UPNG.encode(frames, W, H, 0, delays);
             const blob = new Blob([resBuf], {type:"image/png"});
-            document.getElementById('finalPreview').src = URL.createObjectURL(blob);
             document.getElementById('dlBtn').href = URL.createObjectURL(blob);
-            document.getElementById('dlBtn').download = "medal_custom.png";
+            document.getElementById('dlBtn').download = "medal_expanded.png";
             document.getElementById('finalSize').innerText = "Вес: " + (blob.size/1024).toFixed(2) + " КБ";
             document.getElementById('resultContainer').style.display = "block";
             st.innerText = "✅ Готово!";
-        } catch (e) { st.innerText = "❌ Ошибка: " + e.message; }
+        } catch (e) { st.innerText = "❌ Ошибка!"; console.error(e); }
     };
 
-    function loadImage(file) {
-        return new Promise(res => {
-            const img = new Image();
-            img.onload = () => res(img);
-            img.src = URL.createObjectURL(file);
-        });
-    }
+    function loadImage(f) { return new Promise(res => { const i = new Image(); i.onload = () => res(i); i.src = URL.createObjectURL(f); }); }
 </script>
 </body>
 </html>
