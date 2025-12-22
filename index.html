@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GitHub APNG Assembler</title>
+    <script src="https://cdn.jsdelivr.net/npm/upng-js@2.1.0/UPNG.min.js"></script>
+    <style>
+        body { font-family: sans-serif; max-width: 800px; margin: 40px auto; padding: 20px; line-height: 1.6; background: #f4f4f9; }
+        .container { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .controls { margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 20px; }
+        input[type="file"] { margin-bottom: 10px; }
+        button { background: #2ea44f; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        button:hover { background: #2c974b; }
+        #preview { margin-top: 20px; max-width: 100%; border: 1px dashed #ccc; display: none; }
+        .info { font-size: 0.9em; color: #666; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Сборщик APNG анимации</h2>
+    <p class="info">Выберите несколько PNG или JPG файлов, чтобы склеить их в одну анимацию.</p>
+
+    <div class="controls">
+        <input type="file" id="fileInput" multiple accept="image/png, image/jpeg"><br>
+        <label>Задержка между кадрами (мс): </label>
+        <input type="number" id="delay" value="200" step="50" style="width: 80px;">
+        <br><br>
+        <button id="buildBtn">Собрать APNG</button>
+    </div>
+
+    <div id="status"></div>
+    <img id="preview" alt="Результат">
+    <br>
+    <a id="downloadLink" style="display:none;">⬇️ Скачать готовый APNG</a>
+</div>
+
+<script>
+    const fileInput = document.getElementById('fileInput');
+    const buildBtn = document.getElementById('buildBtn');
+    const status = document.getElementById('status');
+    const preview = document.getElementById('preview');
+    const downloadLink = document.getElementById('downloadLink');
+
+    buildBtn.addEventListener('click', async () => {
+        const files = Array.from(fileInput.files);
+        if (files.length < 2) {
+            alert("Пожалуйста, выберите хотя бы 2 изображения.");
+            return;
+        }
+
+        status.innerText = "Обработка кадров...";
+        const delay = parseInt(document.getElementById('delay').value);
+
+        try {
+            const frames = [];
+            let width, height;
+
+            // Читаем файлы и конвертируем их в ImageData
+            for (let file of files) {
+                const img = await loadImage(file);
+                if (!width) { width = img.width; height = img.height; }
+                
+                const canvas = document.createElement('canvas');
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+                
+                // Получаем массив пикселей (RGBA)
+                frames.push(ctx.getImageData(0, 0, width, height).data.buffer);
+            }
+
+            status.innerText = "Кодирование APNG...";
+            
+            // Создаем массив задержек (одинаковый для всех кадров)
+            const delays = new Array(frames.length).fill(delay);
+
+            // Собираем APNG используя UPNG.js
+            // Параметры: (frames, width, height, cnum, delays)
+            // cnum: 0 для бесконечного цикла
+            const apngBuffer = UPNG.encode(frames, width, height, 0, delays);
+
+            // Создаем Blob и ссылку для скачивания
+            const blob = new Blob([apngBuffer], { type: "image/png" });
+            const url = URL.createObjectURL(blob);
+
+            preview.src = url;
+            preview.style.display = "block";
+            downloadLink.href = url;
+            downloadLink.download = "animation.png";
+            downloadLink.style.display = "inline-block";
+            downloadLink.innerText = "⬇️ Скачать (" + (blob.size / 1024).toFixed(1) + " KB)";
+            
+            status.innerText = "Готово!";
+        } catch (err) {
+            console.error(err);
+            status.innerText = "Ошибка при сборке.";
+        }
+    });
+
+    // Хелпер для загрузки изображения
+    function loadImage(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => resolve(img);
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+</script>
+
+</body>
+</html>
