@@ -3,9 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>APNG Maker</title>
+    <title>APNG || GIF Maker</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/1.0.11/pako.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/upng-js@2.1.0/UPNG.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gifshot@0.4.5/build/gifshot.min.js"></script>
     <style>
         :root {
             --bg-color: #0a0a0a;
@@ -160,6 +161,9 @@
         .btn-build:hover { background: #ccc; }
         .btn-build:disabled { background: #333; color: #666; }
         
+        .btn-gif { background: #333; color: #fff; border: 1px solid #555; margin-top: 10px; }
+        .btn-gif:hover { background: #444; }
+
         #status { margin-top: 10px; text-align: center; font-size: 12px; letter-spacing: 1px; min-height: 1.2em; color: var(--text-dim); }
         #loaderStatus { color: var(--text-main); font-size: 11px; text-align: center; margin-top: 5px; display: none; text-transform: uppercase; }
 
@@ -197,7 +201,7 @@
 <div class="card">
     <div class="grid">
         <div class="sidebar">
-            <h3 style="margin-top:0; letter-spacing: 2px; text-transform: uppercase; font-size: 18px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">APNG Make новииr</h3>
+            <h3 style="margin-top:0; letter-spacing: 2px; text-transform: uppercase; font-size: 18px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">APNG/GIF Maker</h3>
             <div class="section">
                 <div class="drop-row">
                     <div id="dzBg" class="drop-zone">ВЫБРАТЬ ФОН (опционально)</div>
@@ -226,7 +230,8 @@
             <div class="file-list" id="fileList"></div>
             
             <button class="btn btn-preset" onclick="applySMPreset()">ПРЕСЕТ: СМ МЕДАЛЬ</button>
-            <button class="btn btn-build" id="buildBtn" disabled>СГЕНЕРИРОВАТЬ</button>
+            <button class="btn btn-build" id="buildBtn" disabled>СГЕНЕРИРОВАТЬ APNG</button>
+            <button class="btn btn-gif" id="gifBtn" disabled>СГЕНЕРИРОВАТЬ GIF</button>
             
             <div id="loaderStatus">LOADING...</div>
             <div id="status"></div>
@@ -241,7 +246,7 @@
                 <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 15px;">Preview</div>
                 <img id="finalPreview">
                 <div id="finalSize" style="margin-bottom:15px; font-size: 11px; color: #888;"></div>
-                <a id="dlBtn" class="download-btn">СКАЧАТЬ .PNG</a>
+                <a id="dlBtn" class="download-btn">СКАЧАТЬ ФАЙЛ</a>
             </div>
         </div>
     </div>
@@ -299,7 +304,7 @@
     setupZone('dzAnim', 'animIn', async f => {
         if(!f.length) return;
         if (typeof UPNG === 'undefined') {
-            alert("Библиотека UPNG еще не загружена. Пожалуйста, подождите секунду или обновите страницу.");
+            alert("Библиотека UPNG еще не загружена.");
             return;
         }
         loader.style.display = "block";
@@ -389,6 +394,7 @@
             item.addEventListener('dragend', handleDragEnd);
         });
         document.getElementById('buildBtn').disabled = loadedFrames.length === 0;
+        document.getElementById('gifBtn').disabled = loadedFrames.length === 0;
     }
 
     function handleDragStart(e) { dragSrcEl = this; e.dataTransfer.effectAllowed = 'move'; this.classList.add('ghost'); }
@@ -440,9 +446,10 @@
         document.getElementById('status').innerText = "PRESET APPLIED";
     }
 
+    // СБОРКА APNG
     document.getElementById('buildBtn').onclick = async () => {
         const st = document.getElementById('status');
-        st.innerText = "PROCESSING...";
+        st.innerText = "PROCESSING APNG...";
         try {
             const delays = Array.from(document.querySelectorAll('.delay-input')).map(i => (parseInt(i.value)||10)*10);
             const frames = [];
@@ -464,11 +471,52 @@
             document.getElementById('finalSize').innerText = "SIZE: " + (blob.size/1024).toFixed(2) + " KB";
             document.getElementById('resultContainer').style.display = "block";
             document.getElementById('resultContainer').scrollIntoView({behavior:'smooth'});
-            st.innerText = " ";
-        } catch (e) { 
-            console.error(e);
-            st.innerText = "ERROR"; 
-        }
+            st.innerText = "SUCCESS (APNG)";
+        } catch (e) { console.error(e); st.innerText = "ERROR"; }
+    };
+
+    // НОВАЯ ФУНКЦИЯ: СБОРКА GIF
+    document.getElementById('gifBtn').onclick = async () => {
+        const st = document.getElementById('status');
+        st.innerText = "PROCESSING GIF...";
+        try {
+            const W = canvas.width, H = canvas.height;
+            const frameImages = [];
+            const delayInputs = document.querySelectorAll('.delay-input');
+
+            for (let f of loadedFrames) {
+                const temp = document.createElement('canvas');
+                temp.width = W; temp.height = H;
+                const tCtx = temp.getContext('2d');
+                if (bgImg) tCtx.drawImage(bgImg, pads.left, pads.top);
+                tCtx.drawImage(f.img, offX + pads.left, offY + pads.top);
+                frameImages.push(temp.toDataURL('image/png'));
+            }
+
+            // Берем среднюю задержку для GIF (библиотека gifshot лучше работает с фиксированным интервалом)
+            const avgDelay = (parseInt(delayInputs[0].value) || 10) / 100;
+
+            gifshot.createGIF({
+                images: frameImages,
+                gifWidth: W,
+                gifHeight: H,
+                interval: avgDelay,
+                numWorkers: 2
+            }, function(obj) {
+                if(!obj.error) {
+                    const finalUrl = obj.image;
+                    document.getElementById('finalPreview').src = finalUrl;
+                    document.getElementById('dlBtn').href = finalUrl;
+                    document.getElementById('dlBtn').download = "output.gif";
+                    document.getElementById('finalSize').innerText = "GIF GENERATED";
+                    document.getElementById('resultContainer').style.display = "block";
+                    document.getElementById('resultContainer').scrollIntoView({behavior:'smooth'});
+                    st.innerText = "SUCCESS (GIF)";
+                } else {
+                    st.innerText = "GIF ERROR";
+                }
+            });
+        } catch (e) { console.error(e); st.innerText = "ERROR"; }
     };
 
     function loadImage(f) {
