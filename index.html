@@ -3,222 +3,191 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>APNG Builder: Drag & Drop Edition</title>
+    <title>APNG Builder: CM Medal Edition</title>
     <script src="https://cdn.jsdelivr.net/npm/pako@1.0.11/dist/pako.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/upng-js@2.1.0/UPNG.min.js"></script>
     <style>
         body { font-family: -apple-system, system-ui, sans-serif; background: #f0f2f5; padding: 20px; display: flex; justify-content: center; }
         .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.1); width: 100%; max-width: 650px; }
-        h2 { margin-top: 0; color: #1a1a1a; border-bottom: 2px solid #eee; padding-bottom: 10px; }
-        
+        h2 { margin: 0 0 10px 0; color: #1a1a1a; }
+        .preset-bar { background: #fff3cd; padding: 15px; border-radius: 8px; border: 1px solid #ffeeba; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; }
         .section { margin-bottom: 20px; padding: 15px; border: 1px solid #eef0f2; border-radius: 8px; }
         .section-title { font-weight: bold; margin-bottom: 10px; display: block; color: #555; }
-        
-        /* Стили для зон перетаскивания */
-        .drop-zone { border: 2px dashed #ccc; padding: 20px; text-align: center; border-radius: 8px; cursor: pointer; transition: all 0.3s ease; color: #777; }
-        .drop-zone.highlight { border-color: #007bff; background: #e7f3ff; color: #007bff; }
-        .bg-zone { background: #fffcf0; }
-        .anim-zone { background: #f8f9fa; }
-        
+        .drop-zone { border: 2px dashed #ccc; padding: 20px; text-align: center; border-radius: 8px; cursor: pointer; transition: 0.3s; color: #777; }
+        .drop-zone.highlight { border-color: #007bff; background: #e7f3ff; }
         .file-item { display: flex; align-items: center; gap: 10px; background: #fff; padding: 8px; margin-bottom: 5px; border-radius: 6px; border: 1px solid #eee; font-size: 13px; }
-        .file-item img { width: 40px; height: 40px; object-fit: contain; background: #eee; border-radius: 4px; }
-        .file-item input { width: 60px; padding: 4px; border: 1px solid #ddd; }
-
-        #buildBtn { width: 100%; background: #28a745; color: white; border: none; padding: 15px; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px; }
-        #buildBtn:hover { background: #218838; }
-        #buildBtn:disabled { background: #ccc; cursor: not-allowed; }
-        
+        .file-item img { width: 35px; height: 35px; object-fit: contain; background: #eee; }
+        .file-item input { width: 55px; padding: 4px; border: 1px solid #ddd; }
+        #buildBtn { width: 100%; background: #28a745; color: white; border: none; padding: 15px; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; }
+        #buildBtn:disabled { background: #ccc; }
         #status { margin-top: 15px; text-align: center; font-weight: bold; }
-        #resultContainer { margin-top: 20px; text-align: center; display: none; padding-top: 20px; border-top: 2px solid #eee; }
-        #preview { max-width: 100%; border: 1px solid #ddd; border-radius: 8px; background: white; margin-bottom: 10px; }
-        .file-size { font-size: 18px; color: #333; margin: 10px 0; font-weight: bold; }
-        .download-btn { display: inline-block; background: #007bff; color: white; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: bold; }
+        #resultContainer { margin-top: 20px; text-align: center; display: none; border-top: 2px solid #eee; padding-top: 20px; }
+        #preview { border: 1px solid #ddd; background: #fff; padding: 5px; }
+        .btn-preset { background: #ffc107; border: none; padding: 8px 15px; border-radius: 5px; font-weight: bold; cursor: pointer; }
+        .btn-preset:hover { background: #e0a800; }
     </style>
 </head>
 <body>
 
 <div class="card">
-    <h2>APNG Сборщик</h2>
+    <h2>Сборщик APNG</h2>
+
+    <div class="preset-bar">
+        <span>Пресет: <strong>СМ медали ($41 \times 70$)</strong></span>
+        <button class="btn-preset" onclick="applyMedalPreset()">Применить задержки</button>
+    </div>
     
     <div class="section">
-        <span class="section-title">1. Статичный фон (опционально)</span>
-        <div id="dropZoneBg" class="drop-zone bg-zone">
-            Перетащите файл фона сюда или нажмите для выбора
+        <span class="section-title">1. Фон ($41 \times 70$)</span>
+        <div id="dropZoneBg" class="drop-zone" style="padding:10px;">
+            Клик или Drop (Фон)
             <input type="file" id="bgInput" accept="image/png, image/jpeg" style="display:none">
         </div>
-        <div id="bgPreviewContainer" style="display:none; align-items: center; gap: 10px; margin-top: 10px;">
-            <img id="bgThumb" style="height: 40px; border-radius: 4px;">
-            <span id="bgName" style="font-size: 12px; color: #666; flex-grow: 1;"></span>
-            <button onclick="clearBg()" style="padding: 5px; cursor: pointer;">❌</button>
+        <div id="bgPreviewContainer" style="display:none; align-items:center; gap:10px; margin-top:10px;">
+            <img id="bgThumb" style="height:30px;">
+            <button onclick="clearBg()">❌</button>
         </div>
     </div>
 
     <div class="section">
-        <span class="section-title">2. Кадры анимации</span>
-        <div id="dropZoneAnim" class="drop-zone anim-zone">
-            Перетащите файлы кадров сюда
+        <span class="section-title">2. Кадры (19 или 20 штук)</span>
+        <div id="dropZoneAnim" class="drop-zone">
+            Перетащите кадры сюда
             <input type="file" id="fileInput" multiple accept="image/png" style="display:none">
         </div>
-        <div id="fileList" style="margin-top:10px; max-height: 250px; overflow-y: auto;"></div>
+        <div id="fileList" style="margin-top:10px; max-height:200px; overflow-y:auto;"></div>
     </div>
 
-    <button id="buildBtn" disabled>Собрать и посчитать вес</button>
+    <button id="buildBtn" disabled>Собрать APNG</button>
     <div id="status"></div>
 
     <div id="resultContainer">
-        <div class="file-size" id="finalSize">Вес: 0 КБ</div>
-        <img id="preview"><br>
-        <a id="downloadLink" class="download-btn">Скачать готовый APNG</a>
+        <div style="font-weight:bold; margin-bottom:5px;" id="finalSize"></div>
+        <img id="preview"><br><br>
+        <a id="downloadLink" style="background:#007bff; color:white; padding:10px 20px; text-decoration:none; border-radius:6px; font-weight:bold;">Скачать результат</a>
     </div>
 </div>
 
 <script>
-    const bgInput = document.getElementById('bgInput');
-    const fileInput = document.getElementById('fileInput');
-    const buildBtn = document.getElementById('buildBtn');
-    const status = document.getElementById('status');
-    const resultContainer = document.getElementById('resultContainer');
-    const finalSizeText = document.getElementById('finalSize');
-    const preview = document.getElementById('preview');
-    const downloadLink = document.getElementById('downloadLink');
-
     let animationFiles = [];
     let bgFile = null;
+    let useMedalSizes = true; // Для медалей всегда форсим 41x70
 
-    // --- ЛОГИКА DRAG & DROP ---
+    // Схемы задержек (номера кадров 1-indexed -> задержка)
+    const preset19 = {
+        8: [2, 9, 11, 18],
+        16: [3, 4, 5, 6, 7, 8, 12, 13, 14, 15, 16, 17],
+        25: [1], 66: [19], 100: [10]
+    };
+    const preset20 = {
+        8: [2, 6, 7, 10, 12, 19],
+        16: [3, 4, 5, 8, 9, 13, 14, 15, 16, 17, 18],
+        25: [1], 66: [20], 100: [11]
+    };
 
-    function setupDropZone(zoneId, inputId, callback) {
-        const zone = document.getElementById(zoneId);
-        const input = document.getElementById(inputId);
-
-        zone.addEventListener('click', () => input.click());
-
-        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-            zone.addEventListener(eventName, e => { e.preventDefault(); e.stopPropagation(); }, false);
-        });
-
-        ['dragenter', 'dragover'].forEach(eventName => {
-            zone.addEventListener(eventName, () => zone.classList.add('highlight'), false);
-        });
-
-        ['dragleave', 'drop'].forEach(eventName => {
-            zone.addEventListener(eventName, () => zone.classList.remove('highlight'), false);
-        });
-
-        zone.addEventListener('drop', (e) => {
-            const files = e.dataTransfer.files;
-            callback(files);
-        });
-
-        input.addEventListener('change', (e) => callback(e.target.files));
-    }
-
-    setupDropZone('dropZoneBg', 'bgInput', (files) => {
-        if (files.length > 0) {
-            bgFile = files[0];
-            document.getElementById('bgThumb').src = URL.createObjectURL(bgFile);
-            document.getElementById('bgName').innerText = bgFile.name;
-            document.getElementById('bgPreviewContainer').style.display = 'flex';
+    function applyMedalPreset() {
+        const count = animationFiles.length;
+        if (count !== 19 && count !== 20) {
+            alert(`Для пресета нужно 19 или 20 кадров. У вас: ${count}`);
+            return;
         }
-    });
 
-    setupDropZone('dropZoneAnim', 'fileInput', (files) => {
-        const newFiles = Array.from(files);
-        animationFiles = animationFiles.concat(newFiles);
-        renderFileList();
-    });
+        const scheme = count === 19 ? preset19 : preset20;
+        const inputs = document.querySelectorAll('.delay-input');
 
-    function renderFileList() {
-        const container = document.getElementById('fileList');
-        container.innerHTML = '';
-        animationFiles.forEach((file, i) => {
-            const div = document.createElement('div');
-            div.className = 'file-item';
-            div.innerHTML = `
-                <span>${i+1}</span>
-                <img src="${URL.createObjectURL(file)}">
-                <div style="flex-grow:1; overflow:hidden;">${file.name}</div>
-                <input type="number" class="delay-input" value="200" min="10"> мс
-                <button onclick="removeFrame(${i})" style="border:none; background:none; cursor:pointer;">🗑️</button>
-            `;
-            container.appendChild(div);
+        inputs.forEach((input, idx) => {
+            const frameNum = idx + 1;
+            for (let delay in scheme) {
+                if (scheme[delay].includes(frameNum)) {
+                    input.value = delay;
+                }
+            }
         });
-        buildBtn.disabled = animationFiles.length === 0;
+        alert("Задержки пресета СМ медали применены!");
     }
 
-    function removeFrame(index) {
-        animationFiles.splice(index, 1);
-        renderFileList();
+    // Обработка Drop Zones
+    function initZone(id, inputId, cb) {
+        const z = document.getElementById(id);
+        const i = document.getElementById(inputId);
+        z.onclick = () => i.click();
+        z.ondragover = (e) => { e.preventDefault(); z.classList.add('highlight'); };
+        z.ondragleave = () => z.classList.remove('highlight');
+        z.ondrop = (e) => { e.preventDefault(); z.classList.remove('highlight'); cb(e.dataTransfer.files); };
+        i.onchange = (e) => cb(e.target.files);
     }
 
-    function clearBg() {
-        bgFile = null;
-        document.getElementById('bgPreviewContainer').style.display = 'none';
+    initZone('dropZoneBg', 'bgInput', (fs) => {
+        bgFile = fs[0];
+        document.getElementById('bgThumb').src = URL.createObjectURL(bgFile);
+        document.getElementById('bgPreviewContainer').style.display = 'flex';
+    });
+
+    initZone('dropZoneAnim', 'fileInput', (fs) => {
+        animationFiles = [...animationFiles, ...Array.from(fs)];
+        renderFiles();
+    });
+
+    function renderFiles() {
+        const list = document.getElementById('fileList');
+        list.innerHTML = '';
+        animationFiles.forEach((f, i) => {
+            const d = document.createElement('div');
+            d.className = 'file-item';
+            d.innerHTML = `<span>${i+1}</span><img src="${URL.createObjectURL(f)}"><div style="flex-grow:1">${f.name}</div>
+            <input type="number" class="delay-input" value="200"> мс
+            <button onclick="animationFiles.splice(${i},1);renderFiles()">🗑️</button>`;
+            list.appendChild(d);
+        });
+        document.getElementById('buildBtn').disabled = animationFiles.length === 0;
     }
 
-    // --- ФОРМАТИРОВАНИЕ ВЕСА ---
-    function formatBytes(bytes, decimals = 2) {
-        if (bytes === 0) return '0 Bytes';
-        const k = 1024;
-        const dm = decimals < 0 ? 0 : decimals;
-        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-        const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
-    }
+    function clearBg() { bgFile = null; document.getElementById('bgPreviewContainer').style.display = 'none'; }
 
-    // --- СБОРКА ---
-    buildBtn.addEventListener('click', async () => {
-        status.innerText = "⏳ Сборка и расчет веса...";
-        status.style.color = "#007bff";
-        buildBtn.disabled = true;
-
+    // Сборка
+    document.getElementById('buildBtn').onclick = async () => {
+        const status = document.getElementById('status');
+        status.innerText = "⏳ Сборка медалей...";
         try {
-            const delays = Array.from(document.querySelectorAll('.delay-input')).map(i => parseInt(i.value) || 100);
+            const delays = Array.from(document.querySelectorAll('.delay-input')).map(v => parseInt(v.value) || 100);
             const frames = [];
-            let w, h;
+            const W = 41, H = 70; // Принудительный размер для медалей
 
             let bgImg = bgFile ? await loadImage(bgFile) : null;
 
-            for (let i = 0; i < animationFiles.length; i++) {
-                const img = await loadImage(animationFiles[i]);
-                if (i === 0) { w = img.width; h = img.height; }
-
+            for (let file of animationFiles) {
+                const img = await loadImage(file);
                 const canvas = document.createElement('canvas');
-                canvas.width = w; canvas.height = h;
+                canvas.width = W; canvas.height = H;
                 const ctx = canvas.getContext('2d');
 
-                if (bgImg) ctx.drawImage(bgImg, 0, 0, w, h);
-                ctx.drawImage(img, 0, 0, w, h);
-                frames.push(ctx.getImageData(0, 0, w, h).data.buffer);
+                // Отрисовка фона
+                if (bgImg) ctx.drawImage(bgImg, 0, 0, W, H);
+                // Отрисовка кадра
+                ctx.drawImage(img, 0, 0, W, H);
+                
+                frames.push(ctx.getImageData(0, 0, W, H).data.buffer);
             }
 
-            const resultBuffer = UPNG.encode(frames, w, h, 0, delays);
-            const blob = new Blob([resultBuffer], { type: "image/png" });
-            const finalUrl = URL.createObjectURL(blob);
-
-            // Показываем вес
-            finalSizeText.innerText = "Вес файла: " + formatBytes(blob.size);
+            const res = UPNG.encode(frames, W, H, 0, delays);
+            const blob = new Blob([res], {type: "image/png"});
             
-            preview.src = finalUrl;
-            downloadLink.href = finalUrl;
-            downloadLink.download = "result.png";
-            
-            resultContainer.style.display = "block";
+            document.getElementById('preview').src = URL.createObjectURL(blob);
+            document.getElementById('finalSize').innerText = `Размер: ${W}x${H} | Вес: ${(blob.size/1024).toFixed(1)} KB`;
+            document.getElementById('downloadLink').href = URL.createObjectURL(blob);
+            document.getElementById('downloadLink').download = "medal_animation.png";
+            document.getElementById('resultContainer').style.display = "block";
             status.innerText = "✅ Готово!";
-            status.style.color = "green";
-        } catch (err) {
-            status.innerText = "❌ Ошибка: " + err.message;
-            status.style.color = "red";
-        } finally {
-            buildBtn.disabled = false;
+        } catch (e) {
+            status.innerText = "❌ Ошибка: " + e.message;
         }
-    });
+    };
 
     function loadImage(file) {
-        return new Promise((resolve, reject) => {
+        return new Promise((res, rej) => {
             const img = new Image();
-            img.onload = () => resolve(img);
-            img.onerror = reject;
+            img.onload = () => res(img);
+            img.onerror = rej;
             img.src = URL.createObjectURL(file);
         });
     }
