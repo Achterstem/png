@@ -3,28 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>APNG Animated Positioner v2.3</title>
+    <title>APNG Master v2.4</title>
     <script src="https://cdn.jsdelivr.net/npm/pako@1.0.11/dist/pako.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/upng-js@2.1.0/UPNG.min.js"></script>
     <style>
         body { font-family: -apple-system, system-ui, sans-serif; background: #f0f2f5; padding: 20px; display: flex; justify-content: center; }
         .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.1); width: 100%; max-width: 1100px; }
-        .grid { display: grid; grid-template-columns: 340px 1fr; gap: 20px; }
+        .grid { display: grid; grid-template-columns: 360px 1fr; gap: 20px; }
         
         .section { margin-bottom: 15px; padding: 12px; border: 1px solid #eef0f2; border-radius: 8px; background: #fafafa; }
-        .drop-zone { border: 2px dashed #ccc; padding: 10px; text-align: center; border-radius: 8px; cursor: pointer; color: #777; font-size: 13px; transition: 0.3s; }
+        .drop-row { display: flex; gap: 5px; margin-bottom: 5px; }
+        .drop-zone { border: 2px dashed #ccc; padding: 10px; text-align: center; border-radius: 8px; cursor: pointer; color: #777; font-size: 13px; flex-grow: 1; transition: 0.3s; }
         .drop-zone:hover { border-color: #007bff; background: #f0f7ff; }
-        
+        .btn-del-small { background: #fee; border: 1px solid #fcc; border-radius: 8px; cursor: pointer; padding: 0 10px; color: #d33; transition: 0.2s; }
+        .btn-del-small:hover { background: #fdd; }
+
         .controls-panel { background: #222; color: #fff; padding: 12px; border-radius: 8px; margin-bottom: 10px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; box-sizing: border-box; }
         .controls-panel label { font-size: 11px; display: flex; flex-direction: column; gap: 4px; }
-        .controls-panel input { 
-            background: #444; border: 1px solid #555; color: #fff; padding: 6px; border-radius: 4px; 
-            width: 100%; box-sizing: border-box; min-width: 0; 
-        }
+        .controls-panel input { background: #444; border: 1px solid #555; color: #fff; padding: 6px; border-radius: 4px; width: 100%; box-sizing: border-box; min-width: 0; }
 
-        .file-list { max-height: 200px; overflow-y: auto; border: 1px solid #eee; background: white; margin-top: 10px; }
-        .file-item { display: flex; align-items: center; gap: 5px; padding: 4px; border-bottom: 1px solid #eee; font-size: 11px; }
-        .file-item img { width: 25px; height: 25px; object-fit: contain; }
+        /* Список файлов с Drag-and-Drop */
+        .file-list { max-height: 300px; overflow-y: auto; border: 1px solid #eee; background: white; margin-top: 10px; border-radius: 6px; }
+        .file-item { display: flex; align-items: center; gap: 8px; padding: 6px; border-bottom: 1px solid #eee; font-size: 11px; cursor: grab; background: #fff; user-select: none; }
+        .file-item:active { cursor: grabbing; background: #f9f9f9; }
+        .file-item.ghost { opacity: 0.4; background: #e7f3ff; }
+        .file-item img { width: 35px; height: 35px; object-fit: contain; border: 1px solid #eee; background: #fdfdfd; border-radius: 4px; }
+        .file-item .drag-handle { color: #ccc; cursor: grab; font-size: 16px; }
         
         #workArea { position: relative; background: #333; border-radius: 8px; overflow: auto; display: flex; align-items: center; justify-content: center; min-height: 450px; border: 2px solid #444; }
         #bgCanvasPreview { 
@@ -51,31 +55,38 @@
 <div class="card">
     <div class="grid">
         <div class="sidebar">
-            <h3 style="margin-top:0">Настройки APNG</h3>
+            <h3 style="margin-top:0">Настройки APNG v2</h3>
             <div class="section">
-                <div id="dzBg" class="drop-zone">📥 Выбрать фон (опционально)</div>
+                <div class="drop-row">
+                    <div id="dzBg" class="drop-zone">📥 Фон (опц)</div>
+                    <button class="btn-del-small" title="Удалить фон" onclick="removeBg()">🗑️</button>
+                </div>
+                <div class="drop-row">
+                    <div id="dzAnim" class="drop-zone">📥 Кадры</div>
+                    <button class="btn-del-small" title="Очистить все кадры" onclick="clearAllFrames()">🗑️</button>
+                </div>
                 <input type="file" id="bgIn" style="display:none">
-                <div id="dzAnim" class="drop-zone" style="margin-top:5px;">📥 Выбрать кадры</div>
                 <input type="file" id="animIn" multiple style="display:none">
             </div>
 
             <div class="controls-panel">
-                <div style="grid-column: 1/3; font-size: 11px; color: #888; text-transform: uppercase;">Добавить поля (px)</div>
+                <div style="grid-column: 1/3; font-size: 11px; color: #888; text-transform: uppercase;">Поля (px)</div>
                 <label>Сверху <input type="number" id="padTop" value="0"></label>
                 <label>Снизу <input type="number" id="padBottom" value="0"></label>
                 <label>Слева <input type="number" id="padLeft" value="0"></label>
                 <label>Справа <input type="number" id="padRight" value="0"></label>
                 <div style="grid-column: 1/3; height: 1px; background: #444; margin: 4px 0;"></div>
-                <div style="grid-column: 1/3; font-size: 11px; color: #888; text-transform: uppercase;">Позиция медали</div>
-                <label>Смещение X <input type="number" id="posX" value="0"></label>
-                <label>Смещение Y <input type="number" id="posY" value="0"></label>
+                <div style="grid-column: 1/3; font-size: 11px; color: #888; text-transform: uppercase;">Смещение</div>
+                <label>X <input type="number" id="posX" value="0"></label>
+                <label>Y <input type="number" id="posY" value="0"></label>
             </div>
 
             <div class="file-list" id="fileList"></div>
+            
             <button class="btn btn-preset" onclick="applySMPreset()">Пресет "СМ Медали"</button>
             <button class="btn btn-build" id="buildBtn" disabled>СОБРАТЬ APNG</button>
             
-            <div id="loaderStatus">⌛ Идет загрузка файлов...</div>
+            <div id="loaderStatus">⌛ Загрузка...</div>
             <div id="status"></div>
         </div>
 
@@ -85,7 +96,7 @@
             </div>
             
             <div id="resultContainer">
-                <h3 style="margin-top:0">✅ Сборка завершена</h3>
+                <h3 style="margin-top:0">✅ Готово</h3>
                 <div id="finalSize" style="margin-bottom:10px; font-weight:bold; color: #28a745;"></div>
                 <img id="finalPreview">
                 <br>
@@ -96,10 +107,12 @@
 </div>
 
 <script>
-    let animationFiles = [], bgImg = null, loadedFrames = [];
+    let bgImg = null;
+    let loadedFrames = []; // Массив объектов { img, name }
     let offX = 0, offY = 0, currentFrameIdx = 0;
     let pads = { top: 0, bottom: 0, left: 0, right: 0 };
     let animationTimer = null;
+    let dragSrcEl = null;
 
     const canvas = document.getElementById('bgCanvasPreview');
     const ctx = canvas.getContext('2d');
@@ -112,16 +125,13 @@
         };
     });
 
-    document.getElementById('posX').oninput = e => { offX = parseInt(e.target.value)||0; };
-    document.getElementById('posY').oninput = e => { offY = parseInt(e.target.value)||0; };
+    document.getElementById('posX').oninput = e => offX = parseInt(e.target.value)||0;
+    document.getElementById('posY').oninput = e => offY = parseInt(e.target.value)||0;
 
     function updateCanvasSize() {
         let w = 100, h = 100;
-        if (bgImg) {
-            w = bgImg.width; h = bgImg.height;
-        } else if (loadedFrames.length > 0) {
-            w = loadedFrames[0].width; h = loadedFrames[0].height;
-        }
+        if (bgImg) { w = bgImg.width; h = bgImg.height; }
+        else if (loadedFrames.length > 0) { w = loadedFrames[0].img.width; h = loadedFrames[0].img.height; }
         canvas.width = w + pads.left + pads.right;
         canvas.height = h + pads.top + pads.bottom;
     }
@@ -137,7 +147,6 @@
 
     setupZone('dzBg', 'bgIn', async f => {
         loader.style.display = "block";
-        loader.innerText = "⌛ Загрузка фона...";
         bgImg = await loadImage(f[0]);
         updateCanvasSize();
         loader.style.display = "none";
@@ -146,55 +155,91 @@
 
     setupZone('dzAnim', 'animIn', async f => {
         loader.style.display = "block";
-        loader.innerText = `⌛ Загрузка кадров (0/${f.length})...`;
-        
         const sorted = Array.from(f).sort((a,b) => a.name.localeCompare(b.name, undefined, {numeric:true}));
-        animationFiles = animationFiles.concat(sorted);
-        
-        for(let i=0; i<sorted.length; i++) {
-            const img = await loadImage(sorted[i]);
-            loadedFrames.push(img);
-            loader.innerText = `⌛ Загрузка кадров (${i+1}/${sorted.length})...`;
+        for(let file of sorted) {
+            const img = await loadImage(file);
+            loadedFrames.push({ img, name: file.name });
         }
-        
         updateCanvasSize();
         renderList();
         loader.style.display = "none";
         if (!animationTimer) startPreviewLoop();
     });
 
+    function removeBg() { bgImg = null; updateCanvasSize(); }
+    function clearAllFrames() { loadedFrames = []; renderList(); updateCanvasSize(); }
+    function removeFrame(idx) { loadedFrames.splice(idx, 1); renderList(); updateCanvasSize(); }
+
     function startPreviewLoop() {
+        if(animationTimer) clearTimeout(animationTimer);
         const loop = () => {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             if (bgImg) ctx.drawImage(bgImg, pads.left, pads.top);
-
             if (loadedFrames.length > 0) {
-                const img = loadedFrames[currentFrameIdx];
-                ctx.drawImage(img, offX + pads.left, offY + pads.top);
-                ctx.strokeStyle = "rgba(0,123,255,0.6)";
-                ctx.lineWidth = 2;
-                ctx.strokeRect(offX + pads.left, offY + pads.top, img.width, img.height);
+                if (currentFrameIdx >= loadedFrames.length) currentFrameIdx = 0;
+                const frame = loadedFrames[currentFrameIdx];
+                ctx.drawImage(frame.img, offX + pads.left, offY + pads.top);
+                ctx.strokeStyle = "rgba(0,123,255,0.6)"; ctx.lineWidth = 2;
+                ctx.strokeRect(offX + pads.left, offY + pads.top, frame.img.width, frame.img.height);
                 
                 const delayInputs = document.querySelectorAll('.delay-input');
                 const delayValue = delayInputs[currentFrameIdx] ? parseInt(delayInputs[currentFrameIdx].value) : 10;
                 currentFrameIdx = (currentFrameIdx + 1) % loadedFrames.length;
                 animationTimer = setTimeout(loop, Math.max(20, delayValue * 10));
-            } else {
-                animationTimer = setTimeout(loop, 100);
-            }
+            } else { animationTimer = setTimeout(loop, 100); }
         };
         loop();
     }
 
-    let isDragging = false;
-    canvas.onmousedown = () => isDragging = true;
-    window.onmouseup = () => isDragging = false;
+    function renderList() {
+        const container = document.getElementById('fileList');
+        container.innerHTML = loadedFrames.map((f, i) => `
+            <div class="file-item" draggable="true" data-index="${i}">
+                <span class="drag-handle">☰</span>
+                <img src="${f.img.src}">
+                <input type="number" class="delay-input" value="10" style="width:40px; border:1px solid #ccc; padding:2px; border-radius:3px;">
+                <span style="flex-grow:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${f.name}</span>
+                <button class="btn-del-small" onclick="removeFrame(${i})">🗑️</button>
+            </div>
+        `).join('');
+        
+        // Drag-and-drop логика списка
+        const items = container.querySelectorAll('.file-item');
+        items.forEach(item => {
+            item.addEventListener('dragstart', handleDragStart);
+            item.addEventListener('dragover', handleDragOver);
+            item.addEventListener('drop', handleDrop);
+            item.addEventListener('dragend', handleDragEnd);
+        });
+        document.getElementById('buildBtn').disabled = loadedFrames.length === 0;
+    }
+
+    // Drag and Drop события
+    function handleDragStart(e) { dragSrcEl = this; e.dataTransfer.effectAllowed = 'move'; this.classList.add('ghost'); }
+    function handleDragOver(e) { if (e.preventDefault) e.preventDefault(); return false; }
+    function handleDrop(e) {
+        if (e.stopPropagation) e.stopPropagation();
+        if (dragSrcEl !== this) {
+            const from = parseInt(dragSrcEl.dataset.index);
+            const to = parseInt(this.dataset.index);
+            const movedItem = loadedFrames.splice(from, 1)[0];
+            loadedFrames.splice(to, 0, movedItem);
+            renderList();
+        }
+        return false;
+    }
+    function handleDragEnd() { this.classList.remove('ghost'); }
+
+    // Тот же Drag на холсте
+    let isDraggingCanvas = false;
+    canvas.onmousedown = () => isDraggingCanvas = true;
+    window.onmouseup = () => isDraggingCanvas = false;
     canvas.onmousemove = (e) => {
-        if (isDragging && loadedFrames.length > 0) {
+        if (isDraggingCanvas && loadedFrames.length > 0) {
             const rect = canvas.getBoundingClientRect();
             const scaleX = canvas.width / rect.width;
             const scaleY = canvas.height / rect.height;
-            const firstImg = loadedFrames[0];
+            const firstImg = loadedFrames[0].img;
             offX = Math.round((e.clientX - rect.left) * scaleX - pads.left - firstImg.width/2);
             offY = Math.round((e.clientY - rect.top) * scaleY - pads.top - firstImg.height/2);
             document.getElementById('posX').value = offX;
@@ -202,20 +247,9 @@
         }
     };
 
-    function renderList() {
-        document.getElementById('fileList').innerHTML = animationFiles.map((f, i) => `
-            <div class="file-item">
-                <b style="width:20px">${i+1}</b>
-                <input type="number" class="delay-input" value="10" style="width:45px; border:1px solid #ccc; padding:2px; border-radius:3px;">
-                <span style="flex-grow:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${f.name}</span>
-            </div>
-        `).join('');
-        document.getElementById('buildBtn').disabled = loadedFrames.length === 0;
-    }
-
     function applySMPreset() {
         const inputs = document.querySelectorAll('.delay-input');
-        const count = animationFiles.length;
+        const count = loadedFrames.length;
         if (count !== 19 && count !== 20) return alert("Нужно 19 или 20 кадров!");
         inputs.forEach((input, i) => {
             const n = i+1; let d = 10;
@@ -228,43 +262,34 @@
             }
             input.value = d;
         });
-        const st = document.getElementById('status');
-        st.innerText = "Пресет применен!";
-        st.style.color = "purple";
-        setTimeout(() => st.innerText = "", 3000);
+        document.getElementById('status').innerText = "Пресет применен!";
     }
 
     document.getElementById('buildBtn').onclick = async () => {
         const st = document.getElementById('status');
-        st.innerText = "⏳ Сборка APNG...";
-        st.style.color = "orange";
+        st.innerText = "⏳ Сборка...";
         try {
             const delays = Array.from(document.querySelectorAll('.delay-input')).map(i => (parseInt(i.value)||10)*10);
             const frames = [];
             const W = canvas.width, H = canvas.height;
-            for (let img of loadedFrames) {
+            for (let f of loadedFrames) {
                 const temp = document.createElement('canvas');
                 temp.width = W; temp.height = H;
                 const tCtx = temp.getContext('2d');
                 if (bgImg) tCtx.drawImage(bgImg, pads.left, pads.top);
-                tCtx.drawImage(img, offX + pads.left, offY + pads.top);
+                tCtx.drawImage(f.img, offX + pads.left, offY + pads.top);
                 frames.push(tCtx.getImageData(0,0,W,H).data.buffer);
             }
             const resBuf = UPNG.encode(frames, W, H, 0, delays);
             const blob = new Blob([resBuf], {type:"image/png"});
-            const url = URL.createObjectURL(blob);
-            document.getElementById('finalPreview').src = url;
-            document.getElementById('dlBtn').href = url;
-            document.getElementById('dlBtn').download = "medal_result.png";
-            document.getElementById('finalSize').innerText = "Вес файла: " + (blob.size/1024).toFixed(2) + " КБ";
+            document.getElementById('finalPreview').src = URL.createObjectURL(blob);
+            document.getElementById('dlBtn').href = URL.createObjectURL(blob);
+            document.getElementById('dlBtn').download = "medal.png";
+            document.getElementById('finalSize').innerText = "Вес: " + (blob.size/1024).toFixed(2) + " КБ";
             document.getElementById('resultContainer').style.display = "block";
             document.getElementById('resultContainer').scrollIntoView({behavior:'smooth'});
             st.innerText = "✅ Готово!";
-            st.style.color = "green";
-        } catch (e) { 
-            st.innerText = "❌ Ошибка при сборке"; 
-            st.style.color = "red";
-        }
+        } catch (e) { st.innerText = "❌ Ошибка"; }
     };
 
     function loadImage(f) {
