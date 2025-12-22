@@ -3,48 +3,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>APNG Medal Master</title>
+    <title>APNG Medal Master Pro</title>
     <script src="https://cdn.jsdelivr.net/npm/pako@1.0.11/dist/pako.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/upng-js@2.1.0/UPNG.min.js"></script>
     <style>
         body { font-family: -apple-system, system-ui, sans-serif; background: #f0f2f5; padding: 20px; display: flex; justify-content: center; }
         .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.1); width: 100%; max-width: 650px; }
         h2 { margin-top: 0; border-bottom: 2px solid #eee; padding-bottom: 10px; font-size: 20px; display: flex; justify-content: space-between; align-items: center; }
-        
         .section { margin-bottom: 15px; padding: 12px; border: 1px solid #eef0f2; border-radius: 8px; }
         .section-title { font-weight: bold; margin-bottom: 8px; display: block; color: #555; }
-        
         .drop-zone { border: 2px dashed #ccc; padding: 15px; text-align: center; border-radius: 8px; cursor: pointer; transition: 0.3s; color: #777; font-size: 14px; }
         .drop-zone.highlight { border-color: #007bff; background: #e7f3ff; }
-        
         .file-list { margin-top: 10px; max-height: 250px; overflow-y: auto; border: 1px solid #eee; border-radius: 6px; }
         .file-item { display: flex; align-items: center; gap: 8px; background: #fff; padding: 5px 10px; border-bottom: 1px solid #eee; font-size: 13px; }
-        .file-item:last-child { border-bottom: none; }
         .file-item img { width: 32px; height: 32px; object-fit: contain; background: #eee; border-radius: 4px; }
         .file-item input { width: 50px; padding: 3px; border: 1px solid #ddd; text-align: center; border-radius: 4px; }
-        
         .controls-row { display: flex; gap: 10px; margin-bottom: 15px; }
         .btn { border: none; padding: 10px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.2s; }
         .btn-preset { background: #6f42c1; color: white; flex-grow: 2; }
         .btn-clear { background: #dc3545; color: white; flex-grow: 1; }
-        .btn:hover { opacity: 0.9; }
-        
         #buildBtn { width: 100%; background: #28a745; color: white; padding: 15px; border-radius: 8px; font-size: 16px; margin-top: 10px; }
         #buildBtn:disabled { background: #ccc; cursor: not-allowed; }
-        
         #resultContainer { margin-top: 20px; text-align: center; display: none; border-top: 2px solid #eee; padding-top: 15px; }
         .weight-info { font-size: 18px; font-weight: bold; margin-bottom: 10px; color: #28a745; }
-        #preview { border: 1px solid #ddd; background: #fff; margin-bottom: 10px; min-width: 41px; min-height: 70px; }
+        #preview { border: 1px solid #ddd; background: #fff; margin-bottom: 10px; }
         .download-btn { display: inline-block; background: #007bff; color: white; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: bold; }
     </style>
 </head>
 <body>
 
 <div class="card">
-    <h2>Сборщик APNG <span>v2.0</span></h2>
+    <h2>Сборщик APNG <span>v2.1</span></h2>
     
     <div class="section">
-        <span class="section-title">1. Статичный фон (41x70)</span>
+        <span class="section-title">1. Статичный фон (любой размер)</span>
         <div id="dropZoneBg" class="drop-zone" style="background: #fffcf0;">
             Перетащите фон сюда
             <input type="file" id="bgInput" accept="image/png, image/jpeg" style="display:none">
@@ -57,7 +49,7 @@
     </div>
 
     <div class="section">
-        <span class="section-title">2. Кадры анимации (сортируются по имени)</span>
+        <span class="section-title">2. Кадры анимации</span>
         <div id="dropZoneAnim" class="drop-zone" style="background: #f8f9fa;">
             Перетащите файлы кадров сюда
             <input type="file" id="fileInput" multiple accept="image/png" style="display:none">
@@ -66,7 +58,7 @@
     </div>
 
     <div class="controls-row">
-        <button class="btn btn-preset" onclick="applySMPreset()">Применить пресет "СМ медали"</button>
+        <button class="btn btn-preset" id="presetBtn" onclick="applySMPreset()">Применить пресет "СМ медали"</button>
         <button class="btn btn-clear" onclick="clearAll()">Очистить всё</button>
     </div>
 
@@ -83,8 +75,8 @@
 <script>
     let animationFiles = [];
     let bgFile = null;
+    let isPresetActive = false;
 
-    // Инициализация зон
     setupZone('dropZoneBg', 'bgInput', f => {
         bgFile = f[0];
         document.getElementById('bgThumb').src = URL.createObjectURL(bgFile);
@@ -95,10 +87,7 @@
     setupZone('dropZoneAnim', 'fileInput', f => {
         const newFiles = Array.from(f);
         animationFiles = animationFiles.concat(newFiles);
-        
-        // Автоматическая сортировка по имени (1.png, 2.png...)
         animationFiles.sort((a, b) => a.name.localeCompare(b.name, undefined, {numeric: true, sensitivity: 'base'}));
-        
         renderList();
     });
 
@@ -117,51 +106,35 @@
             <div class="file-item">
                 <b style="color:#888; width:20px;">${i+1}</b>
                 <img src="${URL.createObjectURL(f)}">
-                <div style="flex-grow:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${f.name}">${f.name}</div>
+                <div style="flex-grow:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${f.name}</div>
                 <input type="number" class="delay-input" value="10"> <small>1/100s</small>
-                <button onclick="removeF(${i})" style="border:none; background:none; cursor:pointer; filter:grayscale(1);">🗑️</button>
+                <button onclick="removeF(${i})" style="border:none; background:none; cursor:pointer;">🗑️</button>
             </div>
         `).join('');
         document.getElementById('buildBtn').disabled = animationFiles.length === 0;
     }
 
     function removeF(i) { animationFiles.splice(i, 1); renderList(); }
-    
-    function clearBg() { 
-        bgFile = null; 
-        document.getElementById('bgInput').value = '';
-        document.getElementById('bgPreviewContainer').style.display = 'none'; 
-    }
+    function clearBg() { bgFile = null; document.getElementById('bgInput').value = ''; document.getElementById('bgPreviewContainer').style.display = 'none'; }
+    function clearAll() { animationFiles = []; isPresetActive = false; clearBg(); renderList(); document.getElementById('resultContainer').style.display = 'none'; document.getElementById('status').innerText = ''; }
 
-    function clearAll() {
-        animationFiles = [];
-        clearBg();
-        renderList();
-        document.getElementById('resultContainer').style.display = 'none';
-        document.getElementById('status').innerText = '';
-    }
-
-    // ЛОГИКА ПРЕСЕТА "СМ МЕДАЛИ"
     function applySMPreset() {
         const count = animationFiles.length;
-        const inputs = document.querySelectorAll('.delay-input');
-        
         if (count !== 19 && count !== 20) {
-            alert(`Для этого пресета нужно ровно 19 или 20 кадров. Сейчас загружено: ${count}`);
+            alert(`Для пресета нужно 19 или 20 кадров. У вас: ${count}`);
             return;
         }
-
+        const inputs = document.querySelectorAll('.delay-input');
         inputs.forEach((input, index) => {
             const n = index + 1;
             let d = 10;
-
             if (count === 19) {
                 if ([2,9,11,18].includes(n)) d = 8;
                 else if ([3,4,5,6,7,8,12,13,14,15,16,17].includes(n)) d = 16;
                 else if (n === 1) d = 25;
                 else if (n === 19) d = 66;
                 else if (n === 10) d = 100;
-            } else if (count === 20) {
+            } else {
                 if ([2,6,7,10,12,19].includes(n)) d = 8;
                 else if ([3,4,5,8,9,13,14,15,16,17,18].includes(n)) d = 16;
                 else if (n === 1) d = 25;
@@ -170,57 +143,66 @@
             }
             input.value = d;
         });
-        showStatus("Пресет применен успешно!", "green");
+        isPresetActive = true;
+        showStatus("Пресет применен. Ширина будет скорректирована при сборке (если 40px).", "purple");
     }
 
     function showStatus(txt, color) {
         const s = document.getElementById('status');
-        s.innerText = txt;
-        s.style.color = color;
+        s.innerText = txt; s.style.color = color;
     }
 
-    // СБОРКА APNG
     document.getElementById('buildBtn').onclick = async () => {
         const btn = document.getElementById('buildBtn');
-        showStatus("⏳ Кодирование APNG...", "orange");
+        showStatus("⏳ Сборка...", "orange");
         btn.disabled = true;
 
         try {
-            // Перевод 1/100s в мс
             const delays = Array.from(document.querySelectorAll('.delay-input')).map(i => (parseInt(i.value) || 10) * 10);
-            const frames = [];
-            const w = 41, h = 70; // Фиксированный размер
+            const framesData = [];
+            
+            // Загружаем первый кадр для определения базового размера
+            const firstImg = await loadImage(animationFiles[0]);
+            let targetW = firstImg.width;
+            let targetH = firstImg.height;
+
+            // Если пресет активен и ширина 40, расширяем до 41
+            if (isPresetActive && targetW === 40) {
+                targetW = 41;
+            }
 
             let bgImg = bgFile ? await loadImage(bgFile) : null;
 
             for (let i = 0; i < animationFiles.length; i++) {
                 const img = await loadImage(animationFiles[i]);
                 const canvas = document.createElement('canvas');
-                canvas.width = w; canvas.height = h;
+                canvas.width = targetW;
+                canvas.height = targetH;
                 const ctx = canvas.getContext('2d');
 
-                // Отрисовка
-                if (bgImg) ctx.drawImage(bgImg, 0, 0, w, h);
-                ctx.drawImage(img, 0, 0, w, h);
+                // Рисуем фон (если есть)
+                if (bgImg) {
+                    ctx.drawImage(bgImg, 0, 0);
+                }
                 
-                frames.push(ctx.getImageData(0, 0, w, h).data.buffer);
+                // Рисуем кадр
+                ctx.drawImage(img, 0, 0);
+                
+                framesData.push(ctx.getImageData(0, 0, targetW, targetH).data.buffer);
             }
 
-            // UPNG кодирование
-            const resBuf = UPNG.encode(frames, w, h, 0, delays);
+            const resBuf = UPNG.encode(framesData, targetW, targetH, 0, delays);
             const blob = new Blob([resBuf], { type: "image/png" });
             const url = URL.createObjectURL(blob);
             
-            // Вывод результата
             document.getElementById('preview').src = url;
             document.getElementById('downloadLink').href = url;
-            document.getElementById('downloadLink').download = `sm_medal_${Date.now()}.png`;
-            document.getElementById('finalSize').innerText = "Вес файла: " + (blob.size / 1024).toFixed(2) + " КБ";
+            document.getElementById('downloadLink').download = `apng_result_${Date.now()}.png`;
+            document.getElementById('finalSize').innerText = `Вес: ${(blob.size / 1024).toFixed(2)} КБ | Размер: ${targetW}x${targetH}`;
             document.getElementById('resultContainer').style.display = "block";
             showStatus("✅ Готово!", "green");
         } catch (e) {
             showStatus("❌ Ошибка: " + e.message, "red");
-            console.error(e);
         } finally { btn.disabled = false; }
     };
 
