@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>APNG Animated Positioner v2.1</title>
+    <title>APNG Animated Positioner v2.2</title>
     <script src="https://cdn.jsdelivr.net/npm/pako@1.0.11/dist/pako.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/upng-js@2.1.0/UPNG.min.js"></script>
     <style>
@@ -11,38 +11,35 @@
         .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.1); width: 100%; max-width: 1100px; }
         .grid { display: grid; grid-template-columns: 340px 1fr; gap: 20px; }
         
-        /* Стили боковой панели */
         .section { margin-bottom: 15px; padding: 12px; border: 1px solid #eef0f2; border-radius: 8px; background: #fafafa; }
         .drop-zone { border: 2px dashed #ccc; padding: 10px; text-align: center; border-radius: 8px; cursor: pointer; color: #777; font-size: 13px; transition: 0.3s; }
         .drop-zone.highlight { border-color: #007bff; background: #e7f3ff; }
+        .drop-zone.loading { background: #fff3cd; color: #856404; border-color: #ffeeba; pointer-events: none; }
         
-        /* Исправленная панель управления */
         .controls-panel { background: #222; color: #fff; padding: 12px; border-radius: 8px; margin-bottom: 10px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; box-sizing: border-box; }
         .controls-panel label { font-size: 11px; display: flex; flex-direction: column; gap: 4px; overflow: hidden; }
         .controls-panel input { 
-            background: #444; 
-            border: 1px solid #555; 
-            color: #fff; 
-            padding: 6px; 
-            border-radius: 4px; 
-            width: 100%; /* Занимает всю ширину ячейки */
-            box-sizing: border-box; /* Чтобы padding не раздувал ширину */
-            min-width: 0; /* Важно: позволяет сжиматься меньше стандартных размеров */
+            background: #444; border: 1px solid #555; color: #fff; padding: 6px; border-radius: 4px; 
+            width: 100%; box-sizing: border-box; min-width: 0; 
         }
 
         .file-list { max-height: 200px; overflow-y: auto; border: 1px solid #eee; background: white; margin-top: 10px; }
         .file-item { display: flex; align-items: center; gap: 5px; padding: 4px; border-bottom: 1px solid #eee; font-size: 11px; }
         .file-item img { width: 25px; height: 25px; object-fit: contain; }
         
-        /* Рабочая область */
         #workArea { position: relative; background: #333; border-radius: 8px; overflow: auto; display: flex; align-items: center; justify-content: center; min-height: 450px; border: 2px solid #444; }
-        #bgCanvasPreview { background-color: #fff; background-image: linear-gradient(45deg, #eee 25%, transparent 25%, transparent 75%, #eee 75%, #eee), linear-gradient(45deg, #eee 25%, white 25%, white 75%, #eee 75%, #eee); background-size: 20px 20px; background-position: 0 0, 10px 10px; box-shadow: 0 0 20px rgba(0,0,0,0.5); cursor: move; }
+        #bgCanvasPreview { 
+            background-color: #fff; 
+            background-image: linear-gradient(45deg, #eee 25%, transparent 25%, transparent 75%, #eee 75%, #eee), linear-gradient(45deg, #eee 25%, white 25%, white 75%, #eee 75%, #eee); 
+            background-size: 20px 20px; background-position: 0 0, 10px 10px; 
+            box-shadow: 0 0 20px rgba(0,0,0,0.5); cursor: move; 
+        }
         
         .btn { border: none; padding: 10px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 5px; }
         .btn-preset { background: #6f42c1; color: white; }
         .btn-build { background: #28a745; color: white; font-size: 16px; margin-top: 15px; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
         
-        /* Результат */
         #resultContainer { margin-top: 20px; padding: 20px; border: 2px solid #28a745; border-radius: 8px; background: #f6fff6; display: none; }
         #finalPreview { max-width: 100%; box-shadow: 0 4px 10px rgba(0,0,0,0.1); border: 1px solid #ccc; background: white; }
         .download-btn { display: inline-block; margin-top: 15px; background: #007bff; color: white; padding: 12px 25px; text-decoration: none; border-radius: 6px; font-weight: bold; }
@@ -55,20 +52,20 @@
         <div class="sidebar">
             <h3 style="margin-top:0">Настройки APNG</h3>
             <div class="section">
-                <div id="dzBg" class="drop-zone">📥 Выбрать фон</div>
+                <div id="dzBg" class="drop-zone">📥 Выбрать фон (опционально)</div>
                 <input type="file" id="bgIn" style="display:none">
                 <div id="dzAnim" class="drop-zone" style="margin-top:5px;">📥 Выбрать кадры</div>
                 <input type="file" id="animIn" multiple style="display:none">
             </div>
 
             <div class="controls-panel">
-                <div style="grid-column: 1/3; font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 0.5px;">Добавить поля (px)</div>
+                <div style="grid-column: 1/3; font-size: 11px; color: #888; text-transform: uppercase;">Добавить поля (px)</div>
                 <label>Сверху <input type="number" id="padTop" value="0"></label>
                 <label>Снизу <input type="number" id="padBottom" value="0"></label>
                 <label>Слева <input type="number" id="padLeft" value="0"></label>
                 <label>Справа <input type="number" id="padRight" value="0"></label>
                 <div style="grid-column: 1/3; height: 1px; background: #444; margin: 4px 0;"></div>
-                <div style="grid-column: 1/3; font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 0.5px;">Позиция медали</div>
+                <div style="grid-column: 1/3; font-size: 11px; color: #888; text-transform: uppercase;">Позиция медали</div>
                 <label>Смещение X <input type="number" id="posX" value="0"></label>
                 <label>Смещение Y <input type="number" id="posY" value="0"></label>
             </div>
@@ -104,7 +101,6 @@
     const canvas = document.getElementById('bgCanvasPreview');
     const ctx = canvas.getContext('2d');
 
-    // Настройка полей
     ['padTop','padBottom','padLeft','padRight'].forEach(id => {
         document.getElementById(id).oninput = (e) => {
             pads[id.replace('pad','').toLowerCase()] = parseInt(e.target.value) || 0;
@@ -116,24 +112,45 @@
     document.getElementById('posY').oninput = e => { offY = parseInt(e.target.value)||0; };
 
     function updateCanvasSize() {
-        if (!bgImg) return;
-        canvas.width = bgImg.width + pads.left + pads.right;
-        canvas.height = bgImg.height + pads.top + pads.bottom;
+        let w = 100, h = 100;
+        if (bgImg) {
+            w = bgImg.width; h = bgImg.height;
+        } else if (loadedFrames.length > 0) {
+            w = loadedFrames[0].width; h = loadedFrames[0].height;
+        }
+        canvas.width = w + pads.left + pads.right;
+        canvas.height = h + pads.top + pads.bottom;
     }
 
-    // Загрузка
     setupZone('dzBg', 'bgIn', async f => {
+        const zone = document.getElementById('dzBg');
+        zone.classList.add('loading');
+        zone.innerText = "⌛ Загрузка фона...";
         bgImg = await loadImage(f[0]);
         updateCanvasSize();
+        zone.classList.remove('loading');
+        zone.innerText = "✅ Фон загружен";
         if (!animationTimer) startPreviewLoop();
     });
 
     setupZone('dzAnim', 'animIn', async f => {
+        const zone = document.getElementById('dzAnim');
+        const btn = document.getElementById('buildBtn');
+        zone.classList.add('loading');
+        zone.innerText = "⌛ Загрузка кадров...";
+        btn.disabled = true;
+
         const sorted = Array.from(f).sort((a,b) => a.name.localeCompare(b.name, undefined, {numeric:true}));
         animationFiles = animationFiles.concat(sorted);
-        loadedFrames = await Promise.all(animationFiles.map(file => loadImage(file)));
+        
+        const newFrames = await Promise.all(sorted.map(file => loadImage(file)));
+        loadedFrames = loadedFrames.concat(newFrames);
+        
+        updateCanvasSize();
         renderList();
-        if (bgImg && !animationTimer) startPreviewLoop();
+        zone.classList.remove('loading');
+        zone.innerText = "✅ Кадры добавлены";
+        if (!animationTimer) startPreviewLoop();
     });
 
     function setupZone(id, inId, cb) {
@@ -147,15 +164,16 @@
 
     function startPreviewLoop() {
         const loop = () => {
-            if (!bgImg) return;
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.drawImage(bgImg, pads.left, pads.top);
+            if (bgImg) ctx.drawImage(bgImg, pads.left, pads.top);
+
             if (loadedFrames.length > 0) {
                 const img = loadedFrames[currentFrameIdx];
                 ctx.drawImage(img, offX + pads.left, offY + pads.top);
                 ctx.strokeStyle = "rgba(0,123,255,0.6)";
                 ctx.lineWidth = 2;
                 ctx.strokeRect(offX + pads.left, offY + pads.top, img.width, img.height);
+                
                 const delayInputs = document.querySelectorAll('.delay-input');
                 const delay = (delayInputs[currentFrameIdx] ? parseInt(delayInputs[currentFrameIdx].value) : 10) * 10;
                 currentFrameIdx = (currentFrameIdx + 1) % loadedFrames.length;
@@ -191,7 +209,7 @@
                 <span style="flex-grow:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${f.name}</span>
             </div>
         `).join('');
-        document.getElementById('buildBtn').disabled = !bgImg || animationFiles.length === 0;
+        document.getElementById('buildBtn').disabled = loadedFrames.length === 0;
     }
 
     function applySMPreset() {
@@ -209,13 +227,13 @@
             }
             input.value = d;
         });
-        document.getElementById('status').innerText = "Пресет успешно применен!";
+        document.getElementById('status').innerText = "Пресет применен!";
         document.getElementById('status').style.color = "purple";
     }
 
     document.getElementById('buildBtn').onclick = async () => {
         const st = document.getElementById('status');
-        st.innerText = "⏳ Формирование файла...";
+        st.innerText = "⏳ Сборка...";
         st.style.color = "orange";
         try {
             const delays = Array.from(document.querySelectorAll('.delay-input')).map(i => (parseInt(i.value)||10)*10);
@@ -225,7 +243,7 @@
                 const temp = document.createElement('canvas');
                 temp.width = W; temp.height = H;
                 const tCtx = temp.getContext('2d');
-                tCtx.drawImage(bgImg, pads.left, pads.top);
+                if (bgImg) tCtx.drawImage(bgImg, pads.left, pads.top);
                 tCtx.drawImage(img, offX + pads.left, offY + pads.top);
                 frames.push(tCtx.getImageData(0,0,W,H).data.buffer);
             }
@@ -238,11 +256,10 @@
             document.getElementById('finalSize').innerText = "Вес файла: " + (blob.size/1024).toFixed(2) + " КБ";
             document.getElementById('resultContainer').style.display = "block";
             document.getElementById('resultContainer').scrollIntoView({behavior:'smooth'});
-            st.innerText = "✅ Файл успешно собран!";
+            st.innerText = "✅ Готово!";
             st.style.color = "green";
         } catch (e) { 
-            st.innerText = "❌ Ошибка при сборке"; 
-            st.style.color = "red";
+            st.innerText = "❌ Ошибка"; 
         }
     };
 
