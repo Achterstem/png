@@ -3,166 +3,185 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>APNG Optimizer (Background + Layers)</title>
+    <title>APNG Assembler + Static BG</title>
     <script src="https://cdn.jsdelivr.net/npm/pako@1.0.11/dist/pako.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/upng-js@2.1.0/UPNG.min.js"></script>
     <style>
-        body { font-family: system-ui, -apple-system, sans-serif; background: #f4f7f6; color: #333; line-height: 1.5; padding: 20px; }
-        .container { max-width: 700px; margin: 0 auto; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
-        .section { margin-bottom: 25px; padding: 15px; border: 1px dashed #ddd; border-radius: 10px; }
-        h3 { margin-top: 0; font-size: 1.1em; color: #555; }
-        .file-item { display: flex; align-items: center; gap: 10px; background: #f9f9f9; padding: 8px; margin-top: 5px; border-radius: 6px; font-size: 0.9em; }
-        .file-item img { width: 40px; height: 40px; object-fit: contain; background: #eee; border-radius: 4px; }
-        button { width: 100%; padding: 15px; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s; }
-        #buildBtn { background: #007bff; color: white; }
-        #buildBtn:hover { background: #0056b3; }
+        body { font-family: -apple-system, system-ui, sans-serif; background: #f0f2f5; padding: 20px; display: flex; justify-content: center; }
+        .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.1); width: 100%; max-width: 650px; }
+        h2 { margin-top: 0; color: #1a1a1a; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        
+        .section { margin-bottom: 20px; padding: 15px; border: 1px solid #eef0f2; border-radius: 8px; }
+        .section-title { font-weight: bold; margin-bottom: 10px; display: block; color: #555; }
+        
+        .bg-zone { background: #fff9e6; border: 2px dashed #ffc107; padding: 15px; text-align: center; border-radius: 8px; cursor: pointer; }
+        .drop-zone { background: #e7f3ff; border: 2px dashed #007bff; padding: 20px; text-align: center; border-radius: 8px; cursor: pointer; }
+        
+        .file-item { display: flex; align-items: center; gap: 10px; background: #f8f9fa; padding: 8px; margin-bottom: 5px; border-radius: 6px; font-size: 13px; }
+        .file-item img { width: 40px; height: 40px; object-fit: contain; background: #ddd; border-radius: 4px; }
+        .file-item input { width: 60px; padding: 4px; }
+
+        #buildBtn { width: 100%; background: #28a745; color: white; border: none; padding: 15px; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px; }
         #buildBtn:disabled { background: #ccc; }
-        .settings { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
-        input[type="number"], select { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
-        #status { text-align: center; margin: 15px 0; font-weight: bold; }
-        #result { text-align: center; display: none; margin-top: 20px; }
-        #preview { max-width: 100%; border: 2px solid #eee; border-radius: 10px; }
+        
+        #status { margin-top: 15px; text-align: center; font-weight: 500; }
+        #resultContainer { margin-top: 20px; text-align: center; display: none; padding-top: 20px; border-top: 2px solid #eee; }
+        #preview { max-width: 100%; border: 1px solid #ddd; border-radius: 8px; background: #fff; }
+        .download-btn { display: inline-block; margin-top: 10px; background: #007bff; color: white; text-decoration: none; padding: 10px 20px; border-radius: 6px; }
+        
+        .bg-preview { display: flex; align-items: center; gap: 10px; margin-top: 10px; font-size: 12px; color: #666; }
+        .bg-preview img { height: 30px; border-radius: 4px; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h2>Оптимизированный APNG Сборщик</h2>
-
+<div class="card">
+    <h2>APNG Сборщик (с фоном)</h2>
+    
     <div class="section">
-        <h3>1. Статичный фон (основа)</h3>
-        <input type="file" id="bgInput" accept="image/png, image/jpeg">
-        <div id="bgInfo"></div>
-    </div>
-
-    <div class="section">
-        <h3>2. Кадры анимации (поверх фона)</h3>
-        <input type="file" id="framesInput" multiple accept="image/png">
-        <div id="framesList" style="max-height: 200px; overflow-y: auto; margin-top: 10px;"></div>
-    </div>
-
-    <div class="settings">
-        <div>
-            <label>Задержка (мс):</label>
-            <input type="number" id="globalDelay" value="100">
+        <span class="section-title">1. Статичный фон (опционально)</span>
+        <div class="bg-zone" onclick="document.getElementById('bgInput').click()">
+            Нажмите, чтобы выбрать фоновый файл
+            <input type="file" id="bgInput" accept="image/png, image/jpeg" style="display:none">
         </div>
-        <div>
-            <label>Цветов (для сжатия):</label>
-            <select id="quality">
-                <option value="0">Без потерь (тяжелый)</option>
-                <option value="256" selected>256 (оптимально)</option>
-                <option value="128">128 (легкий)</option>
-                <option value="64">64 (минимальный вес)</option>
-            </select>
+        <div id="bgPreviewContainer" class="bg-preview" style="display:none">
+            <span>Фон выбран:</span>
+            <img id="bgThumb">
+            <button onclick="clearBg()" style="font-size:10px; cursor:pointer">Удалить</button>
         </div>
     </div>
 
-    <button id="buildBtn" disabled>Собрать и оптимизировать</button>
+    <div class="section">
+        <span class="section-title">2. Кадры анимации</span>
+        <div class="drop-zone" onclick="document.getElementById('fileInput').click()">
+            Выберите PNG кадры
+            <input type="file" id="fileInput" multiple accept="image/png" style="display:none">
+        </div>
+        <div id="fileList" style="margin-top:10px; max-height: 200px; overflow-y: auto;"></div>
+    </div>
 
+    <button id="buildBtn" disabled>Собрать APNG</button>
     <div id="status"></div>
 
-    <div id="result">
-        <img id="preview">
-        <br><br>
-        <a id="downloadLink" style="background:#28a745; color:white; text-decoration:none; padding:10px 20px; border-radius:6px; font-weight:bold;">Скачать APNG</a>
+    <div id="resultContainer">
+        <strong>Результат:</strong><br>
+        <img id="preview"><br>
+        <a id="downloadLink" class="download-btn">Скачать файл</a>
     </div>
 </div>
 
 <script>
+    const fileInput = document.getElementById('fileInput');
     const bgInput = document.getElementById('bgInput');
-    const framesInput = document.getElementById('framesInput');
+    const fileListContainer = document.getElementById('fileList');
     const buildBtn = document.getElementById('buildBtn');
     const status = document.getElementById('status');
-    const framesList = document.getElementById('framesList');
+    const resultContainer = document.getElementById('resultContainer');
+    const preview = document.getElementById('preview');
+    const downloadLink = document.getElementById('downloadLink');
 
+    let animationFiles = [];
     let bgFile = null;
-    let animFiles = [];
 
-    bgInput.onchange = (e) => { 
+    // Логика выбора фона
+    bgInput.addEventListener('change', (e) => {
         bgFile = e.target.files[0];
-        checkReady();
-    };
+        if (bgFile) {
+            document.getElementById('bgThumb').src = URL.createObjectURL(bgFile);
+            document.getElementById('bgPreviewContainer').style.display = 'flex';
+        }
+    });
 
-    framesInput.onchange = (e) => {
-        animFiles = Array.from(e.target.files);
-        framesList.innerHTML = animFiles.map((f, i) => `
-            <div class="file-item">
-                <b>${i+1}</b>
-                <img src="${URL.createObjectURL(f)}">
-                <span>${f.name}</span>
-            </div>
-        `).join('');
-        checkReady();
-    };
-
-    function checkReady() {
-        buildBtn.disabled = !(bgFile && animFiles.length > 0);
+    function clearBg() {
+        bgFile = null;
+        bgInput.value = '';
+        document.getElementById('bgPreviewContainer').style.display = 'none';
     }
 
-    buildBtn.onclick = async () => {
-        status.innerText = "⏳ Обработка слоев...";
+    // Логика выбора кадров
+    fileInput.addEventListener('change', (e) => {
+        animationFiles = Array.from(e.target.files);
+        fileListContainer.innerHTML = '';
+        
+        animationFiles.forEach((file, i) => {
+            const div = document.createElement('div');
+            div.className = 'file-item';
+            div.innerHTML = `
+                <span>${i+1}</span>
+                <img src="${URL.createObjectURL(file)}">
+                <div style="flex-grow:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap">${file.name}</div>
+                <input type="number" class="delay-input" value="200" min="10"> мс
+            `;
+            fileListContainer.appendChild(div);
+        });
+        buildBtn.disabled = animationFiles.length === 0;
+    });
+
+    // Сборка
+    buildBtn.addEventListener('click', async () => {
+        status.innerText = "⏳ Обработка...";
         status.style.color = "orange";
         buildBtn.disabled = true;
 
         try {
-            const bgImg = await loadImage(bgFile);
-            const w = bgImg.width;
-            const h = bgImg.height;
-
+            const delays = Array.from(document.querySelectorAll('.delay-input')).map(i => parseInt(i.value) || 100);
             const frames = [];
-            const delays = [];
-            const delayVal = parseInt(document.getElementById('globalDelay').value);
-            const colors = parseInt(document.getElementById('quality').value);
+            let w, h;
 
-            // Создаем временный холст для рендеринга слоев
-            const canvas = document.createElement('canvas');
-            canvas.width = w;
-            canvas.height = h;
-            const ctx = canvas.getContext('2d');
+            // Загружаем фон, если он есть
+            let bgImg = bgFile ? await loadImage(bgFile) : null;
 
-            for (let file of animFiles) {
-                const frameImg = await loadImage(file);
+            for (let i = 0; i < animationFiles.length; i++) {
+                const img = await loadImage(animationFiles[i]);
                 
-                // 1. Рисуем фон
-                ctx.clearRect(0, 0, w, h);
-                ctx.drawImage(bgImg, 0, 0, w, h);
+                if (i === 0) {
+                    w = img.width; 
+                    h = img.height;
+                }
+
+                const canvas = document.createElement('canvas');
+                canvas.width = w;
+                canvas.height = h;
+                const ctx = canvas.getContext('2d');
+
+                // 1. Рисуем фон (если есть)
+                if (bgImg) {
+                    ctx.drawImage(bgImg, 0, 0, w, h);
+                }
+
+                // 2. Накладываем текущий кадр сверху
+                ctx.drawImage(img, 0, 0, w, h);
                 
-                // 2. Накладываем текущий кадр
-                ctx.drawImage(frameImg, 0, 0, w, h);
-                
-                // 3. Получаем данные
                 frames.push(ctx.getImageData(0, 0, w, h).data.buffer);
-                delays.push(delayVal);
             }
 
-            status.innerText = "⚙️ Сжатие и оптимизация...";
-            
-            // UPNG.encode(frames, w, h, colors, delays)
-            // colors: 0 - lossless, >0 - lossy (сильно уменьшает вес)
-            const resultBuffer = UPNG.encode(frames, w, h, colors, delays);
+            status.innerText = "⚙️ Сжатие и сборка...";
+            const resultBuffer = UPNG.encode(frames, w, h, 0, delays);
             
             const blob = new Blob([resultBuffer], { type: "image/png" });
-            const url = URL.createObjectURL(blob);
+            const finalUrl = URL.createObjectURL(blob);
 
-            document.getElementById('preview').src = url;
-            document.getElementById('downloadLink').href = url;
-            document.getElementById('downloadLink').download = "optimized.png";
-            document.getElementById('result').style.display = "block";
+            preview.src = finalUrl;
+            downloadLink.href = finalUrl;
+            downloadLink.download = "animated_with_bg.png";
             
-            status.innerText = `✅ Готово! Размер: ${(blob.size / 1024).toFixed(1)} KB`;
+            resultContainer.style.display = "block";
+            status.innerText = "✅ Готово!";
             status.style.color = "green";
         } catch (err) {
+            console.error(err);
             status.innerText = "❌ Ошибка: " + err.message;
             status.style.color = "red";
         } finally {
             buildBtn.disabled = false;
         }
-    };
+    });
 
     function loadImage(file) {
-        return new Promise((resolve) => {
+        return new Promise((resolve, reject) => {
             const img = new Image();
             img.onload = () => resolve(img);
+            img.onerror = reject;
             img.src = URL.createObjectURL(file);
         });
     }
