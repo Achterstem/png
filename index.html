@@ -3,112 +3,151 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GitHub APNG Assembler</title>
+    <title>Advanced APNG Assembler</title>
     <script src="https://cdn.jsdelivr.net/npm/upng-js@2.1.0/UPNG.min.js"></script>
     <style>
-        body { font-family: sans-serif; max-width: 800px; margin: 40px auto; padding: 20px; line-height: 1.6; background: #f4f4f9; }
-        .container { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        .controls { margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 20px; }
-        input[type="file"] { margin-bottom: 10px; }
-        button { background: #2ea44f; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; }
-        button:hover { background: #2c974b; }
-        #preview { margin-top: 20px; max-width: 100%; border: 1px dashed #ccc; display: none; }
-        .info { font-size: 0.9em; color: #666; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; max-width: 900px; margin: 20px auto; padding: 20px; background: #f0f2f5; color: #1c1e21; }
+        .card { background: white; padding: 25px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .file-item { display: flex; align-items: center; gap: 15px; padding: 10px; border-bottom: 1px solid #eee; background: #fff; }
+        .file-item img { width: 50px; height: 50px; object-fit: cover; border-radius: 4px; border: 1px solid #ddd; }
+        .file-list { margin: 20px 0; max-height: 400px; overflow-y: auto; border: 1px solid #eee; border-radius: 8px; }
+        .controls { display: flex; flex-direction: column; gap: 15px; margin-bottom: 20px; }
+        button { background: #007bff; color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: 600; }
+        button:hover { background: #0056b3; }
+        button:disabled { background: #ccc; }
+        input[type="number"] { padding: 5px; width: 80px; border: 1px solid #ddd; border-radius: 4px; }
+        #status { margin-top: 15px; font-weight: bold; color: #d93025; }
+        #preview { margin-top: 20px; max-width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); display: none; }
+        .download-btn { background: #28a745; text-decoration: none; display: none; margin-top: 10px; text-align: center; }
+        .download-btn:hover { background: #218838; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h2>Сборщик APNG анимации</h2>
-    <p class="info">Выберите несколько PNG или JPG файлов, чтобы склеить их в одну анимацию.</p>
-
+<div class="card">
+    <h2>Сборщик APNGшки</h2>
+    
     <div class="controls">
-        <input type="file" id="fileInput" multiple accept="image/png, image/jpeg"><br>
-        <label>Задержка между кадрами (мс): </label>
-        <input type="number" id="delay" value="200" step="50" style="width: 80px;">
-        <br><br>
-        <button id="buildBtn">Собрать APNG</button>
+        <input type="file" id="fileInput" multiple accept="image/png, image/jpeg">
+        <div id="fileList" class="file-list">
+            </div>
+        <button id="buildBtn" disabled>Собрать анимацию</button>
     </div>
 
     <div id="status"></div>
-    <img id="preview" alt="Результат">
-    <br>
-    <a id="downloadLink" style="display:none;">⬇️ Скачать готовый APNG</a>
+    <img id="preview">
+    <a id="downloadLink" class="download-btn">Скачать результат</a>
 </div>
 
 <script>
     const fileInput = document.getElementById('fileInput');
+    const fileListContainer = document.getElementById('fileList');
     const buildBtn = document.getElementById('buildBtn');
     const status = document.getElementById('status');
     const preview = document.getElementById('preview');
     const downloadLink = document.getElementById('downloadLink');
 
-    buildBtn.addEventListener('click', async () => {
-        const files = Array.from(fileInput.files);
-        if (files.length < 2) {
-            alert("Пожалуйста, выберите хотя бы 2 изображения.");
+    let selectedFiles = [];
+
+    // 1. Обработка выбора файлов
+    fileInput.addEventListener('change', async (e) => {
+        fileListContainer.innerHTML = '';
+        selectedFiles = Array.from(e.target.files);
+        
+        if (selectedFiles.length === 0) {
+            buildBtn.disabled = true;
             return;
         }
 
-        status.innerText = "Обработка кадров...";
-        const delay = parseInt(document.getElementById('delay').value);
+        for (let i = 0; i < selectedFiles.length; i++) {
+            const file = selectedFiles[i];
+            const url = URL.createObjectURL(file);
+            
+            const div = document.createElement('div');
+            div.className = 'file-item';
+            div.innerHTML = `
+                <span>${i + 1}</span>
+                <img src="${url}">
+                <label>Задержка (мс):</label>
+                <input type="number" class="frame-delay" value="200" min="10" data-index="${i}">
+                <small>${file.name}</small>
+            `;
+            fileListContainer.appendChild(div);
+        }
+        buildBtn.disabled = false;
+        status.innerText = "";
+    });
+
+    // 2. Сборка APNG
+    buildBtn.addEventListener('click', async () => {
+        status.innerText = "Начинаем сборку...";
+        status.style.color = "#000";
+        buildBtn.disabled = true;
 
         try {
+            const delays = Array.from(document.querySelectorAll('.frame-delay'))
+                               .map(input => parseInt(input.value) || 100);
+            
             const frames = [];
-            let width, height;
+            let targetWidth, targetHeight;
 
-            // Читаем файлы и конвертируем их в ImageData
-            for (let file of files) {
-                const img = await loadImage(file);
-                if (!width) { width = img.width; height = img.height; }
+            for (let i = 0; i < selectedFiles.length; i++) {
+                const img = await loadImage(selectedFiles[i]);
                 
+                // На первом кадре определяем эталонный размер
+                if (i === 0) {
+                    targetWidth = img.width;
+                    targetHeight = img.height;
+                }
+
                 const canvas = document.createElement('canvas');
-                canvas.width = width;
-                canvas.height = height;
+                canvas.width = targetWidth;
+                canvas.height = targetHeight;
                 const ctx = canvas.getContext('2d');
-                ctx.drawImage(img, 0, 0, width, height);
                 
-                // Получаем массив пикселей (RGBA)
-                frames.push(ctx.getImageData(0, 0, width, height).data.buffer);
+                // Рисуем с масштабированием под размер первого кадра
+                ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
+                const imageData = ctx.getImageData(0, 0, targetWidth, targetHeight);
+                frames.push(imageData.data.buffer);
             }
 
-            status.innerText = "Кодирование APNG...";
+            status.innerText = "Кодирование... (это может занять время)";
             
-            // Создаем массив задержек (одинаковый для всех кадров)
-            const delays = new Array(frames.length).fill(delay);
-
-            // Собираем APNG используя UPNG.js
-            // Параметры: (frames, width, height, cnum, delays)
-            // cnum: 0 для бесконечного цикла
-            const apngBuffer = UPNG.encode(frames, width, height, 0, delays);
-
-            // Создаем Blob и ссылку для скачивания
+            // Сборка (0 в конце означает бесконечный цикл)
+            const apngBuffer = UPNG.encode(frames, targetWidth, targetHeight, 0, delays);
+            
             const blob = new Blob([apngBuffer], { type: "image/png" });
             const url = URL.createObjectURL(blob);
 
             preview.src = url;
             preview.style.display = "block";
+            
             downloadLink.href = url;
-            downloadLink.download = "animation.png";
-            downloadLink.style.display = "inline-block";
-            downloadLink.innerText = "⬇️ Скачать (" + (blob.size / 1024).toFixed(1) + " KB)";
+            downloadLink.download = "animated.png";
+            downloadLink.style.display = "block";
+            downloadLink.innerText = `Скачать APNG (${(blob.size / 1024).toFixed(1)} KB)`;
             
             status.innerText = "Готово!";
+            status.style.color = "#28a745";
         } catch (err) {
             console.error(err);
-            status.innerText = "Ошибка при сборке.";
+            status.innerText = "Ошибка: " + err.message;
+            status.style.color = "#d93025";
+        } finally {
+            buildBtn.disabled = false;
         }
     });
 
-    // Хелпер для загрузки изображения
     function loadImage(file) {
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
             reader.onload = (e) => {
                 const img = new Image();
                 img.onload = () => resolve(img);
+                img.onerror = reject;
                 img.src = e.target.result;
             };
+            reader.onerror = reject;
             reader.readAsDataURL(file);
         });
     }
