@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>APNG Assembler</title>
+    <title>APNG Builder: Drag & Drop Edition</title>
     <script src="https://cdn.jsdelivr.net/npm/pako@1.0.11/dist/pako.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/upng-js@2.1.0/UPNG.min.js"></script>
     <style>
@@ -14,23 +14,25 @@
         .section { margin-bottom: 20px; padding: 15px; border: 1px solid #eef0f2; border-radius: 8px; }
         .section-title { font-weight: bold; margin-bottom: 10px; display: block; color: #555; }
         
-        .bg-zone { background: #fff9e6; border: 2px dashed #ffc107; padding: 15px; text-align: center; border-radius: 8px; cursor: pointer; }
-        .drop-zone { background: #e7f3ff; border: 2px dashed #007bff; padding: 20px; text-align: center; border-radius: 8px; cursor: pointer; }
+        /* Стили для зон перетаскивания */
+        .drop-zone { border: 2px dashed #ccc; padding: 20px; text-align: center; border-radius: 8px; cursor: pointer; transition: all 0.3s ease; color: #777; }
+        .drop-zone.highlight { border-color: #007bff; background: #e7f3ff; color: #007bff; }
+        .bg-zone { background: #fffcf0; }
+        .anim-zone { background: #f8f9fa; }
         
-        .file-item { display: flex; align-items: center; gap: 10px; background: #f8f9fa; padding: 8px; margin-bottom: 5px; border-radius: 6px; font-size: 13px; }
-        .file-item img { width: 40px; height: 40px; object-fit: contain; background: #ddd; border-radius: 4px; }
-        .file-item input { width: 60px; padding: 4px; }
+        .file-item { display: flex; align-items: center; gap: 10px; background: #fff; padding: 8px; margin-bottom: 5px; border-radius: 6px; border: 1px solid #eee; font-size: 13px; }
+        .file-item img { width: 40px; height: 40px; object-fit: contain; background: #eee; border-radius: 4px; }
+        .file-item input { width: 60px; padding: 4px; border: 1px solid #ddd; }
 
         #buildBtn { width: 100%; background: #28a745; color: white; border: none; padding: 15px; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px; }
-        #buildBtn:disabled { background: #ccc; }
+        #buildBtn:hover { background: #218838; }
+        #buildBtn:disabled { background: #ccc; cursor: not-allowed; }
         
-        #status { margin-top: 15px; text-align: center; font-weight: 500; }
+        #status { margin-top: 15px; text-align: center; font-weight: bold; }
         #resultContainer { margin-top: 20px; text-align: center; display: none; padding-top: 20px; border-top: 2px solid #eee; }
-        #preview { max-width: 100%; border: 1px solid #ddd; border-radius: 8px; background: #fff; }
-        .download-btn { display: inline-block; margin-top: 10px; background: #007bff; color: white; text-decoration: none; padding: 10px 20px; border-radius: 6px; }
-        
-        .bg-preview { display: flex; align-items: center; gap: 10px; margin-top: 10px; font-size: 12px; color: #666; }
-        .bg-preview img { height: 30px; border-radius: 4px; }
+        #preview { max-width: 100%; border: 1px solid #ddd; border-radius: 8px; background: white; margin-bottom: 10px; }
+        .file-size { font-size: 18px; color: #333; margin: 10px 0; font-weight: bold; }
+        .download-btn { display: inline-block; background: #007bff; color: white; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -39,88 +41,135 @@
     <h2>APNG Сборщик</h2>
     
     <div class="section">
-        <span class="section-title">1. Фон</span>
-        <div class="bg-zone" onclick="document.getElementById('bgInput').click()">
-            Нажмите, чтобы выбрать фоновый файл
+        <span class="section-title">1. Статичный фон (опционально)</span>
+        <div id="dropZoneBg" class="drop-zone bg-zone">
+            Перетащите файл фона сюда или нажмите для выбора
             <input type="file" id="bgInput" accept="image/png, image/jpeg" style="display:none">
         </div>
-        <div id="bgPreviewContainer" class="bg-preview" style="display:none">
-            <span>Фон выбран:</span>
-            <img id="bgThumb">
-            <button onclick="clearBg()" style="font-size:10px; cursor:pointer">Удалить</button>
+        <div id="bgPreviewContainer" style="display:none; align-items: center; gap: 10px; margin-top: 10px;">
+            <img id="bgThumb" style="height: 40px; border-radius: 4px;">
+            <span id="bgName" style="font-size: 12px; color: #666; flex-grow: 1;"></span>
+            <button onclick="clearBg()" style="padding: 5px; cursor: pointer;">❌</button>
         </div>
     </div>
 
     <div class="section">
         <span class="section-title">2. Кадры анимации</span>
-        <div class="drop-zone" onclick="document.getElementById('fileInput').click()">
-            Выберите PNG кадры
+        <div id="dropZoneAnim" class="drop-zone anim-zone">
+            Перетащите файлы кадров сюда
             <input type="file" id="fileInput" multiple accept="image/png" style="display:none">
         </div>
-        <div id="fileList" style="margin-top:10px; max-height: 200px; overflow-y: auto;"></div>
+        <div id="fileList" style="margin-top:10px; max-height: 250px; overflow-y: auto;"></div>
     </div>
 
-    <button id="buildBtn" disabled>Собрать APNG</button>
+    <button id="buildBtn" disabled>Собрать и посчитать вес</button>
     <div id="status"></div>
 
     <div id="resultContainer">
-        <strong>Результат:</strong><br>
+        <div class="file-size" id="finalSize">Вес: 0 КБ</div>
         <img id="preview"><br>
-        <a id="downloadLink" class="download-btn">Скачать файл</a>
+        <a id="downloadLink" class="download-btn">Скачать готовый APNG</a>
     </div>
 </div>
 
 <script>
-    const fileInput = document.getElementById('fileInput');
     const bgInput = document.getElementById('bgInput');
-    const fileListContainer = document.getElementById('fileList');
+    const fileInput = document.getElementById('fileInput');
     const buildBtn = document.getElementById('buildBtn');
     const status = document.getElementById('status');
     const resultContainer = document.getElementById('resultContainer');
+    const finalSizeText = document.getElementById('finalSize');
     const preview = document.getElementById('preview');
     const downloadLink = document.getElementById('downloadLink');
 
     let animationFiles = [];
     let bgFile = null;
 
-    // Логика выбора фона
-    bgInput.addEventListener('change', (e) => {
-        bgFile = e.target.files[0];
-        if (bgFile) {
+    // --- ЛОГИКА DRAG & DROP ---
+
+    function setupDropZone(zoneId, inputId, callback) {
+        const zone = document.getElementById(zoneId);
+        const input = document.getElementById(inputId);
+
+        zone.addEventListener('click', () => input.click());
+
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            zone.addEventListener(eventName, e => { e.preventDefault(); e.stopPropagation(); }, false);
+        });
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            zone.addEventListener(eventName, () => zone.classList.add('highlight'), false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            zone.addEventListener(eventName, () => zone.classList.remove('highlight'), false);
+        });
+
+        zone.addEventListener('drop', (e) => {
+            const files = e.dataTransfer.files;
+            callback(files);
+        });
+
+        input.addEventListener('change', (e) => callback(e.target.files));
+    }
+
+    setupDropZone('dropZoneBg', 'bgInput', (files) => {
+        if (files.length > 0) {
+            bgFile = files[0];
             document.getElementById('bgThumb').src = URL.createObjectURL(bgFile);
+            document.getElementById('bgName').innerText = bgFile.name;
             document.getElementById('bgPreviewContainer').style.display = 'flex';
         }
     });
 
-    function clearBg() {
-        bgFile = null;
-        bgInput.value = '';
-        document.getElementById('bgPreviewContainer').style.display = 'none';
-    }
+    setupDropZone('dropZoneAnim', 'fileInput', (files) => {
+        const newFiles = Array.from(files);
+        animationFiles = animationFiles.concat(newFiles);
+        renderFileList();
+    });
 
-    // Логика выбора кадров
-    fileInput.addEventListener('change', (e) => {
-        animationFiles = Array.from(e.target.files);
-        fileListContainer.innerHTML = '';
-        
+    function renderFileList() {
+        const container = document.getElementById('fileList');
+        container.innerHTML = '';
         animationFiles.forEach((file, i) => {
             const div = document.createElement('div');
             div.className = 'file-item';
             div.innerHTML = `
                 <span>${i+1}</span>
                 <img src="${URL.createObjectURL(file)}">
-                <div style="flex-grow:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap">${file.name}</div>
+                <div style="flex-grow:1; overflow:hidden;">${file.name}</div>
                 <input type="number" class="delay-input" value="200" min="10"> мс
+                <button onclick="removeFrame(${i})" style="border:none; background:none; cursor:pointer;">🗑️</button>
             `;
-            fileListContainer.appendChild(div);
+            container.appendChild(div);
         });
         buildBtn.disabled = animationFiles.length === 0;
-    });
+    }
 
-    // Сборка
+    function removeFrame(index) {
+        animationFiles.splice(index, 1);
+        renderFileList();
+    }
+
+    function clearBg() {
+        bgFile = null;
+        document.getElementById('bgPreviewContainer').style.display = 'none';
+    }
+
+    // --- ФОРМАТИРОВАНИЕ ВЕСА ---
+    function formatBytes(bytes, decimals = 2) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const dm = decimals < 0 ? 0 : decimals;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+    }
+
+    // --- СБОРКА ---
     buildBtn.addEventListener('click', async () => {
-        status.innerText = "⏳ Обработка...";
-        status.style.color = "orange";
+        status.innerText = "⏳ Сборка и расчет веса...";
+        status.style.color = "#007bff";
         buildBtn.disabled = true;
 
         try {
@@ -128,48 +177,36 @@
             const frames = [];
             let w, h;
 
-            // Загружаем фон, если он есть
             let bgImg = bgFile ? await loadImage(bgFile) : null;
 
             for (let i = 0; i < animationFiles.length; i++) {
                 const img = await loadImage(animationFiles[i]);
-                
-                if (i === 0) {
-                    w = img.width; 
-                    h = img.height;
-                }
+                if (i === 0) { w = img.width; h = img.height; }
 
                 const canvas = document.createElement('canvas');
-                canvas.width = w;
-                canvas.height = h;
+                canvas.width = w; canvas.height = h;
                 const ctx = canvas.getContext('2d');
 
-                // 1. Рисуем фон (если есть)
-                if (bgImg) {
-                    ctx.drawImage(bgImg, 0, 0, w, h);
-                }
-
-                // 2. Накладываем текущий кадр сверху
+                if (bgImg) ctx.drawImage(bgImg, 0, 0, w, h);
                 ctx.drawImage(img, 0, 0, w, h);
-                
                 frames.push(ctx.getImageData(0, 0, w, h).data.buffer);
             }
 
-            status.innerText = "⚙️ Сжатие и сборка...";
             const resultBuffer = UPNG.encode(frames, w, h, 0, delays);
-            
             const blob = new Blob([resultBuffer], { type: "image/png" });
             const finalUrl = URL.createObjectURL(blob);
 
+            // Показываем вес
+            finalSizeText.innerText = "Вес файла: " + formatBytes(blob.size);
+            
             preview.src = finalUrl;
             downloadLink.href = finalUrl;
-            downloadLink.download = "animated_with_bg.png";
+            downloadLink.download = "result.png";
             
             resultContainer.style.display = "block";
             status.innerText = "✅ Готово!";
             status.style.color = "green";
         } catch (err) {
-            console.error(err);
             status.innerText = "❌ Ошибка: " + err.message;
             status.style.color = "red";
         } finally {
