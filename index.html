@@ -160,19 +160,9 @@
         .btn-build:hover { background: #ccc; }
         .btn-build:disabled { background: #333; color: #666; }
 
-        /* Стиль кнопки оптимизации */
         .btn-opt { 
-            background: #1a1a1a; 
-            color: #2ecc71; 
-            border: 1px solid #2ecc71; 
-            font-size: 12px; 
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-top: 10px;
-            width: auto;
-            min-width: 200px;
-        }
-        .btn-opt:hover { background: #2ecc71; color: #000; }
+            background: #1a1a1a; color: #d6d6d6; border: 1px solid #d6d6d6; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; margin-top: 10px; width: auto; }
+        .btn-opt:hover { background: #d6d6d6; color: #000; }
         
         #status { margin-top: 10px; text-align: center; font-size: 12px; letter-spacing: 1px; min-height: 1.2em; color: var(--text-dim); }
         #loaderStatus { color: var(--text-main); font-size: 11px; text-align: center; margin-top: 5px; display: none; text-transform: uppercase; }
@@ -258,7 +248,7 @@
                 <div>
                     <a id="dlBtn" class="download-btn">СКАЧАТЬ .PNG</a>
                 </div>
-                <button class="btn btn-opt" id="optBtn" onclick="optimizeAPNG()">ОПТИМИЗИРОВАТЬ РАЗМЕР</button>
+                <button class="btn btn-opt" id="optBtn" onclick="optimizeAPNG()">ОПТИМИЗИРОВАТЬ</button>
             </div>
         </div>
     </div>
