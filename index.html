@@ -160,8 +160,19 @@
         .btn-build:hover { background: #ccc; }
         .btn-build:disabled { background: #333; color: #666; }
 
-        .btn-opt { background: #1a1a1a; color: #929292; border: 1px solid #929292; font-size: 12px; display: none; }
-        .btn-opt:hover { background: #929292; color: #000; }
+        /* Стиль кнопки оптимизации */
+        .btn-opt { 
+            background: #1a1a1a; 
+            color: #2ecc71; 
+            border: 1px solid #2ecc71; 
+            font-size: 12px; 
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 10px;
+            width: auto;
+            min-width: 200px;
+        }
+        .btn-opt:hover { background: #2ecc71; color: #000; }
         
         #status { margin-top: 10px; text-align: center; font-size: 12px; letter-spacing: 1px; min-height: 1.2em; color: var(--text-dim); }
         #loaderStatus { color: var(--text-main); font-size: 11px; text-align: center; margin-top: 5px; display: none; text-transform: uppercase; }
@@ -230,7 +241,6 @@
             
             <button class="btn btn-preset" onclick="applySMPreset()">ПРЕСЕТ: СМ МЕДАЛЬ</button>
             <button class="btn btn-build" id="buildBtn" disabled>СГЕНЕРИРОВАТЬ</button>
-            <button class="btn btn-opt" id="optBtn" onclick="optimizeAPNG()">ОПТИМИЗИРОВАТЬ РАЗМЕР</button>
             
             <div id="loaderStatus">LOADING...</div>
             <div id="status"></div>
@@ -245,7 +255,10 @@
                 <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 15px;">Preview</div>
                 <img id="finalPreview">
                 <div id="finalSize" style="margin-bottom:15px; font-size: 11px; color: #888;"></div>
-                <a id="dlBtn" class="download-btn">СКАЧАТЬ .PNG</a>
+                <div>
+                    <a id="dlBtn" class="download-btn">СКАЧАТЬ .PNG</a>
+                </div>
+                <button class="btn btn-opt" id="optBtn" onclick="optimizeAPNG()">ОПТИМИЗИРОВАТЬ РАЗМЕР</button>
             </div>
         </div>
     </div>
@@ -302,10 +315,6 @@
 
     setupZone('dzAnim', 'animIn', async f => {
         if(!f.length) return;
-        if (typeof UPNG === 'undefined') {
-            alert("Библиотека UPNG еще не загружена. Пожалуйста, подождите секунду или обновите страницу.");
-            return;
-        }
         loader.style.display = "block";
         const sorted = Array.from(f).sort((a,b) => a.name.localeCompare(b.name, undefined, {numeric:true}));
         
@@ -362,9 +371,6 @@
                 if (currentFrameIdx >= loadedFrames.length) currentFrameIdx = 0;
                 const frame = loadedFrames[currentFrameIdx];
                 ctx.drawImage(frame.img, offX + pads.left, offY + pads.top);
-                ctx.strokeStyle = "rgba(0,0,0,0.2)"; ctx.lineWidth = 1;
-                ctx.strokeRect(offX + pads.left, offY + pads.top, frame.img.width, frame.img.height);
-                
                 const delayInputs = document.querySelectorAll('.delay-input');
                 const delayValue = delayInputs[currentFrameIdx] ? (parseInt(delayInputs[currentFrameIdx].value) || 10) : 10;
                 currentFrameIdx = (currentFrameIdx + 1) % loadedFrames.length;
@@ -418,9 +424,8 @@
             const rect = canvas.getBoundingClientRect();
             const scaleX = canvas.width / rect.width;
             const scaleY = canvas.height / rect.height;
-            const firstImg = loadedFrames[0].img;
-            offX = Math.round((e.clientX - rect.left) * scaleX - pads.left - firstImg.width/2);
-            offY = Math.round((e.clientY - rect.top) * scaleY - pads.top - firstImg.height/2);
+            offX = Math.round((e.clientX - rect.left) * scaleX - pads.left - loadedFrames[0].img.width/2);
+            offY = Math.round((e.clientY - rect.top) * scaleY - pads.top - loadedFrames[0].img.height/2);
             document.getElementById('posX').value = offX;
             document.getElementById('posY').value = offY;
         }
@@ -441,7 +446,6 @@
             }
             input.value = d;
         });
-        document.getElementById('status').innerText = "PRESET APPLIED";
     }
 
     async function encodePNG(cColors) {
@@ -456,7 +460,6 @@
             tCtx.drawImage(f.img, offX + pads.left, offY + pads.top);
             frames.push(tCtx.getImageData(0,0,W,H).data.buffer);
         }
-        // cColors: 0 = lossless, 1-256 = quantized (lossy)
         return UPNG.encode(frames, W, H, cColors, delays);
     }
 
@@ -466,7 +469,6 @@
         try {
             const resBuf = await encodePNG(0);
             displayResult(resBuf);
-            document.getElementById('optBtn').style.display = 'block';
             st.innerText = " ";
         } catch (e) { 
             console.error(e);
@@ -476,7 +478,7 @@
 
     async function optimizeAPNG() {
         const st = document.getElementById('status');
-        st.innerText = "OPTIMIZING (LOSSY)...";
+        st.innerText = "OPTIMIZING...";
         try {
             const resBuf = await encodePNG(256);
             displayResult(resBuf);
