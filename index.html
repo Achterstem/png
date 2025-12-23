@@ -159,6 +159,9 @@
         .btn-build { background: var(--accent-white); color: #000; font-size: 14px; margin-top: 15px; border: none; text-transform: uppercase; letter-spacing: 1px; }
         .btn-build:hover { background: #ccc; }
         .btn-build:disabled { background: #333; color: #666; }
+
+        .btn-opt { background: #1a1a1a; color: #2ecc71; border: 1px solid #2ecc71; font-size: 12px; display: none; }
+        .btn-opt:hover { background: #2ecc71; color: #000; }
         
         #status { margin-top: 10px; text-align: center; font-size: 12px; letter-spacing: 1px; min-height: 1.2em; color: var(--text-dim); }
         #loaderStatus { color: var(--text-main); font-size: 11px; text-align: center; margin-top: 5px; display: none; text-transform: uppercase; }
@@ -227,6 +230,7 @@
             
             <button class="btn btn-preset" onclick="applySMPreset()">ПРЕСЕТ: СМ МЕДАЛЬ</button>
             <button class="btn btn-build" id="buildBtn" disabled>СГЕНЕРИРОВАТЬ</button>
+            <button class="btn btn-opt" id="optBtn" onclick="optimizeAPNG()">ОПТИМИЗИРОВАТЬ РАЗМЕР</button>
             
             <div id="loaderStatus">LOADING...</div>
             <div id="status"></div>
@@ -440,36 +444,58 @@
         document.getElementById('status').innerText = "PRESET APPLIED";
     }
 
+    async function encodePNG(cColors) {
+        const delays = Array.from(document.querySelectorAll('.delay-input')).map(i => (parseInt(i.value)||10)*10);
+        const frames = [];
+        const W = canvas.width, H = canvas.height;
+        for (let f of loadedFrames) {
+            const temp = document.createElement('canvas');
+            temp.width = W; temp.height = H;
+            const tCtx = temp.getContext('2d');
+            if (bgImg) tCtx.drawImage(bgImg, pads.left, pads.top);
+            tCtx.drawImage(f.img, offX + pads.left, offY + pads.top);
+            frames.push(tCtx.getImageData(0,0,W,H).data.buffer);
+        }
+        // cColors: 0 = lossless, 1-256 = quantized (lossy)
+        return UPNG.encode(frames, W, H, cColors, delays);
+    }
+
     document.getElementById('buildBtn').onclick = async () => {
         const st = document.getElementById('status');
         st.innerText = "PROCESSING...";
         try {
-            const delays = Array.from(document.querySelectorAll('.delay-input')).map(i => (parseInt(i.value)||10)*10);
-            const frames = [];
-            const W = canvas.width, H = canvas.height;
-            for (let f of loadedFrames) {
-                const temp = document.createElement('canvas');
-                temp.width = W; temp.height = H;
-                const tCtx = temp.getContext('2d');
-                if (bgImg) tCtx.drawImage(bgImg, pads.left, pads.top);
-                tCtx.drawImage(f.img, offX + pads.left, offY + pads.top);
-                frames.push(tCtx.getImageData(0,0,W,H).data.buffer);
-            }
-            const resBuf = UPNG.encode(frames, W, H, 0, delays);
-            const blob = new Blob([resBuf], {type:"image/png"});
-            const finalUrl = URL.createObjectURL(blob);
-            document.getElementById('finalPreview').src = finalUrl;
-            document.getElementById('dlBtn').href = finalUrl;
-            document.getElementById('dlBtn').download = "output.png";
-            document.getElementById('finalSize').innerText = "SIZE: " + (blob.size/1024).toFixed(2) + " KB";
-            document.getElementById('resultContainer').style.display = "block";
-            document.getElementById('resultContainer').scrollIntoView({behavior:'smooth'});
+            const resBuf = await encodePNG(0);
+            displayResult(resBuf);
+            document.getElementById('optBtn').style.display = 'block';
             st.innerText = " ";
         } catch (e) { 
             console.error(e);
             st.innerText = "ERROR"; 
         }
     };
+
+    async function optimizeAPNG() {
+        const st = document.getElementById('status');
+        st.innerText = "OPTIMIZING (LOSSY)...";
+        try {
+            const resBuf = await encodePNG(256);
+            displayResult(resBuf);
+            st.innerText = "OPTIMIZED";
+        } catch (e) {
+            st.innerText = "ERROR";
+        }
+    }
+
+    function displayResult(buffer) {
+        const blob = new Blob([buffer], {type:"image/png"});
+        const finalUrl = URL.createObjectURL(blob);
+        document.getElementById('finalPreview').src = finalUrl;
+        document.getElementById('dlBtn').href = finalUrl;
+        document.getElementById('dlBtn').download = "output.png";
+        document.getElementById('finalSize').innerText = "SIZE: " + (blob.size/1024).toFixed(2) + " KB";
+        document.getElementById('resultContainer').style.display = "block";
+        document.getElementById('resultContainer').scrollIntoView({behavior:'smooth'});
+    }
 
     function loadImage(f) {
         return new Promise(res => {
