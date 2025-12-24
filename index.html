@@ -9,6 +9,8 @@
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/1.0.11/pako.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/upng-js@2.1.0/UPNG.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.min.js"></script>
+
     <style>
         :root {
             --bg-color: #0a0a0a;
@@ -230,7 +232,8 @@
 
             <div class="file-list" id="fileList"></div>
             
-            <button class="btn btn-build" id="buildBtn" disabled>СГЕНЕРИРОВАТЬ</button>
+            <button class="btn btn-build" id="buildBtn" disabled>СОЗДАТЬ APNG</button>
+            <button class="btn btn-build" id="gifBtn" disabled onclick="createGIF()">СОЗДАТЬ GIF</button>
             <button class="btn btn-build" id="spriteBtn" disabled onclick="createSprite()">СОЗДАТЬ СПРАЙТ</button>
             
             <div id="loaderStatus">LOADING...</div>
@@ -247,7 +250,7 @@
                 <img id="finalPreview">
                 <div id="finalSize" style="margin-bottom:15px; font-size: 11px; color: #888;"></div>
                 <div>
-                    <a id="dlBtn" class="download-btn">СКАЧАТЬ .PNG</a>
+                    <a id="dlBtn" class="download-btn">СКАЧАТЬ ФАЙЛ</a>
                 </div>
                 <button class="btn btn-opt" id="optBtn" onclick="optimizeAPNG()">ОПТИМИЗИРОВАТЬ</button>
             </div>
@@ -392,6 +395,7 @@
         const hasFrames = loadedFrames.length > 0;
         document.getElementById('buildBtn').disabled = !hasFrames;
         document.getElementById('spriteBtn').disabled = !hasFrames;
+        document.getElementById('gifBtn').disabled = !hasFrames;
     }
 
     function handleDragStart(e) { dragSrcEl = this; e.dataTransfer.effectAllowed = 'move'; this.classList.add('ghost'); }
@@ -470,7 +474,7 @@
 
             spriteCanvas.toBlob((blob) => {
                 displayResult(blob, "sprite_sheet.png", true);
-                st.innerText = "SPRITE DONE";
+                st.innerText = " ";
             }, 'image/png');
 
         } catch (e) {
@@ -491,6 +495,7 @@
         }
     }
 
+    // --- ОБНОВЛЕННАЯ ФУНКЦИЯ ОТОБРАЖЕНИЯ РЕЗУЛЬТАТА ---
     function displayResult(data, filename, isBlob = false) {
         const blob = isBlob ? data : new Blob([data], {type:"image/png"});
         const finalUrl = URL.createObjectURL(blob);
@@ -500,6 +505,58 @@
         document.getElementById('finalSize').innerText = "SIZE: " + (blob.size/1024).toFixed(2) + " KB";
         document.getElementById('resultContainer').style.display = "block";
         document.getElementById('resultContainer').scrollIntoView({behavior:'smooth'});
+
+        // ФИКС: Показываем кнопку Оптимизировать только для PNG (и не для спрайтов)
+        const isApng = filename.toLowerCase().endsWith('.png') && !filename.includes('sprite_sheet');
+        document.getElementById('optBtn').style.display = isApng ? 'inline-block' : 'none';
+    }
+
+    async function createGIF() {
+        const st = document.getElementById('status');
+        st.innerText = "GENERATING GIF...";
+        try {
+            const workerUrl = 'https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.worker.js';
+            const workerResp = await fetch(workerUrl);
+            const workerCode = await workerResp.text();
+            const workerBlob = new Blob([workerCode], { type: 'application/javascript' });
+            const blobWorkerUrl = URL.createObjectURL(workerBlob);
+
+            const W = canvas.width, H = canvas.height;
+            const delays = Array.from(document.querySelectorAll('.delay-input')).map(i => (parseInt(i.value) || 10) * 10);
+
+            const gif = new GIF({
+                workers: 2,
+                quality: 10,
+                width: W,
+                height: H,
+                workerScript: blobWorkerUrl,
+                transparent: 'rgba(0,0,0,0)'
+            });
+
+            for (let i = 0; i < loadedFrames.length; i++) {
+                const f = loadedFrames[i];
+                const temp = document.createElement('canvas');
+                temp.width = W; temp.height = H;
+                const tCtx = temp.getContext('2d');
+                
+                if (bgImg) {
+                    tCtx.drawImage(bgImg, pads.left, pads.top);
+                }
+
+                tCtx.drawImage(f.img, offX + pads.left, offY + pads.top);
+                gif.addFrame(temp, {delay: delays[i], copy: true});
+            }
+
+            gif.on('finished', function(blob) {
+                displayResult(blob, "animation.gif", true);
+                st.innerText = " ";
+                URL.revokeObjectURL(blobWorkerUrl);
+            });
+            gif.render();
+        } catch (e) {
+            console.error(e);
+            st.innerText = "GIF ERROR: " + e.message;
+        }
     }
 
     function loadImage(f) {
