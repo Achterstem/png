@@ -153,12 +153,10 @@
         }
         
         .btn { border: 1px solid #444; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 5px; transition: 0.2s; }
-        .btn-preset { background: #1a1a1a; color: var(--text-main); }
-        .btn-preset:hover { background: #252525; border-color: #666; }
         
         .btn-build { background: var(--accent-white); color: #000; font-size: 14px; margin-top: 15px; border: none; text-transform: uppercase; letter-spacing: 1px; }
         .btn-build:hover { background: #ccc; }
-        .btn-build:disabled { background: #333; color: #666; }
+        .btn-build:disabled { background: #333; color: #666; cursor: not-allowed; }
 
         .btn-opt { 
             background: #1a1a1a; color: #d6d6d6; border: 1px solid #d6d6d6; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; margin-top: 10px; width: auto; }
@@ -229,8 +227,8 @@
 
             <div class="file-list" id="fileList"></div>
             
-            <button class="btn btn-preset" onclick="applySMPreset()">ПРЕСЕТ: СМ МЕДАЛЬ</button>
             <button class="btn btn-build" id="buildBtn" disabled>СГЕНЕРИРОВАТЬ</button>
+            <button class="btn btn-build" id="spriteBtn" disabled onclick="createSprite()">СОЗДАТЬ СПРАЙТ</button>
             
             <div id="loaderStatus">LOADING...</div>
             <div id="status"></div>
@@ -388,7 +386,9 @@
             item.addEventListener('drop', handleDrop);
             item.addEventListener('dragend', handleDragEnd);
         });
-        document.getElementById('buildBtn').disabled = loadedFrames.length === 0;
+        const hasFrames = loadedFrames.length > 0;
+        document.getElementById('buildBtn').disabled = !hasFrames;
+        document.getElementById('spriteBtn').disabled = !hasFrames;
     }
 
     function handleDragStart(e) { dragSrcEl = this; e.dataTransfer.effectAllowed = 'move'; this.classList.add('ghost'); }
@@ -421,23 +421,6 @@
         }
     };
 
-    function applySMPreset() {
-        const inputs = document.querySelectorAll('.delay-input');
-        const count = loadedFrames.length;
-        if (count !== 19 && count !== 20) return alert("Нужно 19 или 20 кадров!");
-        inputs.forEach((input, i) => {
-            const n = i+1; let d = 10;
-            if (count === 19) {
-                if([2,9,11,18].includes(n)) d=8; else if([3,4,5,6,7,8,12,13,14,15,16,17].includes(n)) d=16;
-                else if(n===1) d=25; else if(n===19) d=66; else if(n===10) d=100;
-            } else {
-                if([2,6,7,10,12,19].includes(n)) d=8; else if([3,4,5,8,9,13,14,15,16,17,18].includes(n)) d=16;
-                else if(n===1) d=25; else if(n===20) d=66; else if(n===11) d=100;
-            }
-            input.value = d;
-        });
-    }
-
     async function encodePNG(cColors) {
         const delays = Array.from(document.querySelectorAll('.delay-input')).map(i => (parseInt(i.value)||10)*10);
         const frames = [];
@@ -458,7 +441,7 @@
         st.innerText = "PROCESSING...";
         try {
             const resBuf = await encodePNG(0);
-            displayResult(resBuf);
+            displayResult(resBuf, "output.png");
             st.innerText = " ";
         } catch (e) { 
             console.error(e);
@@ -466,24 +449,51 @@
         }
     };
 
+    async function createSprite() {
+        const st = document.getElementById('status');
+        st.innerText = "CREATING SPRITE...";
+        try {
+            const W = canvas.width, H = canvas.height;
+            const spriteCanvas = document.createElement('canvas');
+            spriteCanvas.width = W * loadedFrames.length;
+            spriteCanvas.height = H;
+            const sCtx = spriteCanvas.getContext('2d');
+
+            loadedFrames.forEach((f, i) => {
+                const currentX = i * W;
+                if (bgImg) sCtx.drawImage(bgImg, currentX + pads.left, pads.top);
+                sCtx.drawImage(f.img, currentX + offX + pads.left, offY + pads.top);
+            });
+
+            spriteCanvas.toBlob((blob) => {
+                displayResult(blob, "sprite_sheet.png", true);
+                st.innerText = "SPRITE DONE";
+            }, 'image/png');
+
+        } catch (e) {
+            console.error(e);
+            st.innerText = "SPRITE ERROR";
+        }
+    }
+
     async function optimizeAPNG() {
         const st = document.getElementById('status');
         st.innerText = "OPTIMIZING...";
         try {
             const resBuf = await encodePNG(256);
-            displayResult(resBuf);
+            displayResult(resBuf, "output_optimized.png");
             st.innerText = "OPTIMIZED";
         } catch (e) {
             st.innerText = "ERROR";
         }
     }
 
-    function displayResult(buffer) {
-        const blob = new Blob([buffer], {type:"image/png"});
+    function displayResult(data, filename, isBlob = false) {
+        const blob = isBlob ? data : new Blob([data], {type:"image/png"});
         const finalUrl = URL.createObjectURL(blob);
         document.getElementById('finalPreview').src = finalUrl;
         document.getElementById('dlBtn').href = finalUrl;
-        document.getElementById('dlBtn').download = "output.png";
+        document.getElementById('dlBtn').download = filename;
         document.getElementById('finalSize').innerText = "SIZE: " + (blob.size/1024).toFixed(2) + " KB";
         document.getElementById('resultContainer').style.display = "block";
         document.getElementById('resultContainer').scrollIntoView({behavior:'smooth'});
