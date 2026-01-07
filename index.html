@@ -241,7 +241,12 @@
                 <div style="grid-column: 1/3; height: 1px; background: #222; margin: 5px 0;"></div>
                 <div style="grid-column: 1/3; font-size: 9px; color: #555; text-transform: uppercase; letter-spacing: 2px;">ЦВЕТ ПРЕДПРОСМОТРА</div>
                 <label style="grid-column: 1/3;"> <input type="color" id="previewBgColor" value="#ffffff"></label>
-            </div>
+<div style="grid-column: 1/3; height: 1px; background: #222; margin: 5px 0;"></div>
+<div style="grid-column: 1/3; font-size: 9px; color: #555; text-transform: uppercase; letter-spacing: 2px;">ТАЙМИНГ НА ВСЕ КАДРЫ</div>
+<label style="grid-column: 1/3;"> 
+    <input type="number" id="globalDelay" value="10" placeholder="введите значение">
+</label>            </div>
+
             <div class="file-list" id="fileList"></div>
             <button class="btn btn-build" id="buildBtn" disabled>СОЗДАТЬ APNG</button>
             <button class="btn btn-build" id="gifBtn" disabled onclick="createGIF()">СОЗДАТЬ GIF</button>
@@ -338,6 +343,19 @@
         loader.style.display = "none";
         if (!animationTimer) startPreviewLoop();
     });
+document.getElementById('globalDelay').oninput = e => {
+    const val = parseInt(e.target.value);
+    if (isNaN(val)) return;
+
+    // Обновляем значения в массиве данных
+    loadedFrames.forEach(f => f.delay = val);
+
+    // Обновляем все видимые инпуты в списке файлов
+    const delayInputs = document.querySelectorAll('.delay-input');
+    delayInputs.forEach(input => {
+        input.value = val;
+    });
+};
     function rgbaToImage(rgba, w, h) {
         return new Promise(res => {
             const tempCanvas = document.createElement('canvas');
