@@ -347,10 +347,8 @@ document.getElementById('globalDelay').oninput = e => {
     const val = parseInt(e.target.value);
     if (isNaN(val)) return;
 
-    // Обновляем значения в массиве данных
     loadedFrames.forEach(f => f.delay = val);
 
-    // Обновляем все видимые инпуты в списке файлов
     const delayInputs = document.querySelectorAll('.delay-input');
     delayInputs.forEach(input => {
         input.value = val;
