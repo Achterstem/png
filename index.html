@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -331,6 +332,14 @@
                 <input type="file" id="animIn" multiple style="display:none">
             </div>
             <div class="controls-panel">
+               <div style="grid-column: 1/3; font-size: 9px; color: #555; text-transform: uppercase; letter-spacing: 2px; margin-top:8px;">
+    ФОН ОТНОСИТЕЛЬНО АНИМАЦИИ
+</div>
+<select id="bgLayer" style="grid-column: 1/3; padding:8px; background:#222; color:#eee; border:1px solid #444; border-radius:4px;">
+    <option value="behind">ПОД АНИМАЦИЕЙ</option>
+    <option value="above">НАД АНИМАЦИЕЙ</option>
+</select>
+                <div style="grid-column: 1/3; height: 1px; background: #222; margin: 5px 0;"></div>
                 <div style="grid-column: 1/3; font-size: 9px; color: #555; text-transform: uppercase; letter-spacing: 2px;">РАЗМЕР ХОЛСТА</div>
                 <label>Верх <input type="number" id="padTop" value="0"></label>
                 <label>Низ <input type="number" id="padBottom" value="0"></label>
@@ -378,6 +387,7 @@
 </div>
 <script>
     let bgImg = null;
+    let bgMode = "behind";
     let loadedFrames = [];
     let nextFrameNumber = 1;
     let offX = 0, offY = 0, currentFrameIdx = 0;
@@ -394,6 +404,12 @@
             updateCanvasSize();
         };
     });
+    document.getElementById('bgLayer').onchange = e => {
+    bgMode = e.target.value;
+    if (loadedFrames.length > 0 || bgImg) {
+        startPreviewLoop();
+    }
+};
     document.getElementById('posX').oninput = e => offX = parseInt(e.target.value)||0;
     document.getElementById('posY').oninput = e => offY = parseInt(e.target.value)||0;
     document.getElementById('previewBgColor').oninput = e => {
@@ -596,16 +612,28 @@ if (!animationTimer) startPreviewLoop();
         if(animationTimer) clearTimeout(animationTimer);
         const loop = () => {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            if (bgImg) ctx.drawImage(bgImg, pads.left, pads.top);
-            if (loadedFrames.length > 0) {
-                if (currentFrameIdx >= loadedFrames.length) currentFrameIdx = 0;
-                const frame = loadedFrames[currentFrameIdx];
-                ctx.drawImage(frame.img, offX + pads.left, offY + pads.top);
-                const delayInputs = document.querySelectorAll('.delay-input');
-                const delayValue = delayInputs[currentFrameIdx] ? (parseInt(delayInputs[currentFrameIdx].value) || 10) : 10;
-                currentFrameIdx = (currentFrameIdx + 1) % loadedFrames.length;
-                animationTimer = setTimeout(loop, delayValue * 10);
-            } else { animationTimer = setTimeout(loop, 100); }
+
+if (bgImg) {
+    if (bgMode === "behind") {
+        ctx.drawImage(bgImg, pads.left, pads.top);
+    }
+}
+
+if (loadedFrames.length > 0) {
+    if (currentFrameIdx >= loadedFrames.length) currentFrameIdx = 0;
+    const frame = loadedFrames[currentFrameIdx];
+    ctx.drawImage(frame.img, offX + pads.left, offY + pads.top);
+
+    if (bgImg && bgMode === "above") {
+        ctx.drawImage(bgImg, pads.left, pads.top);
+    }
+    const delayInputs = document.querySelectorAll('.delay-input');
+    const delayValue = delayInputs[currentFrameIdx] ? (parseInt(delayInputs[currentFrameIdx].value) || 10) : 10;
+    currentFrameIdx = (currentFrameIdx + 1) % loadedFrames.length;
+    animationTimer = setTimeout(loop, delayValue * 10);
+} else {
+    animationTimer = setTimeout(loop, 100);
+}
         };
         loop();
     }
@@ -752,13 +780,22 @@ function handleDropBetween(e) {
         const frames = [];
         const W = canvas.width, H = canvas.height;
         for (let f of loadedFrames) {
-            const temp = document.createElement('canvas');
-            temp.width = W; temp.height = H;
-            const tCtx = temp.getContext('2d');
-            if (bgImg) tCtx.drawImage(bgImg, pads.left, pads.top);
-            tCtx.drawImage(f.img, offX + pads.left, offY + pads.top);
-            frames.push(tCtx.getImageData(0,0,W,H).data.buffer);
-        }
+    const temp = document.createElement('canvas');
+    temp.width = W; temp.height = H;
+    const tCtx = temp.getContext('2d');
+
+    if (bgImg && bgMode === "behind") {
+        tCtx.drawImage(bgImg, pads.left, pads.top);
+    }
+
+    tCtx.drawImage(f.img, offX + pads.left, offY + pads.top);
+
+    if (bgImg && bgMode === "above") {
+        tCtx.drawImage(bgImg, pads.left, pads.top);
+    }
+
+    frames.push(tCtx.getImageData(0,0,W,H).data.buffer);
+}
         return UPNG.encode(frames, W, H, cColors, delays);
     }
     document.getElementById('buildBtn').onclick = async () => {
@@ -780,10 +817,18 @@ function handleDropBetween(e) {
             spriteCanvas.height = H;
             const sCtx = spriteCanvas.getContext('2d');
             loadedFrames.forEach((f, i) => {
-                const currentX = i * W;
-                if (bgImg) sCtx.drawImage(bgImg, currentX + pads.left, pads.top);
-                sCtx.drawImage(f.img, currentX + offX + pads.left, offY + pads.top);
-            });
+    const currentX = i * W;
+    
+    if (bgImg && bgMode === "behind") {
+        sCtx.drawImage(bgImg, currentX + pads.left, pads.top);
+    }
+    
+    sCtx.drawImage(f.img, currentX + offX + pads.left, currentX + offY + pads.top);
+    
+    if (bgImg && bgMode === "above") {
+        sCtx.drawImage(bgImg, currentX + pads.left, pads.top);
+    }
+});
             spriteCanvas.toBlob((blob) => { displayResult(blob, "sprite_sheet.png", true); st.innerText = " "; }, 'image/png');
         } catch (e) { console.error(e); st.innerText = "SPRITE ERROR"; }
     }
