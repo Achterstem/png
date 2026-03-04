@@ -6,8 +6,18 @@
     <title>ANIMaker</title>
     <link rel="icon" type="image/svg+xml" href="pngicon.svg" sizes="any">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/1.0.11/pako.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/upng-js@2.1.0/UPNG.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/photopea/UPNG.js@latest/UPNG.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gifuct-js@2.1.2/dist/gifuct-js.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+    <script type="module">
+  import { parseGIF, decompressFrames } from 'https://cdn.jsdelivr.net/npm/gifuct-js@2.1.2/+esm';
+  
+  window.parseGIF = parseGIF;
+  window.decompressFrames = decompressFrames;
+  
+  console.log('gifuct-js загружен: parseGIF и decompressFrames доступны');
+</script>
     <style>
         :root {
             --bg-color: #0a0a0a;
@@ -45,7 +55,11 @@
             width: 100%; 
             max-width: 1100px; 
         }
-        .grid { display: grid; grid-template-columns: 360px 1fr; gap: 20px; }
+        .grid { 
+            display: grid; 
+            grid-template-columns: 360px 1fr; 
+            gap: 20px; 
+        }
         .section { 
             margin-bottom: 15px; 
             padding: 12px; 
@@ -123,31 +137,6 @@
             height: 32px;
             cursor: pointer;
         }
-        .file-list { 
-            max-height: 1000px; 
-            overflow-y: auto; 
-            border: 1px solid var(--border-color); 
-            background: #000; 
-            margin-top: 10px; 
-            border-radius: 6px; 
-        }
-        .file-item { 
-            display: flex; 
-            align-items: center; 
-            gap: 10px; 
-            padding: 8px; 
-            border-bottom: 1px solid var(--border-color); 
-            font-size: 11px; 
-            cursor: grab; 
-            background: #111;
-            position: relative;
-        }
-        .file-item.ghost { opacity: 0.3; background: #222; }
-        .file-item.drag-over-top { border-top: 2px solid var(--accent-white) !important; }
-        .file-item.drag-over-bottom { border-bottom: 2px solid var(--accent-white) !important; }
-        .file-item img { width: 35px; height: 35px; object-fit: contain; border: 1px solid #333; background: #fff; border-radius: 4px; }
-        .file-item .drag-handle { color: #444; user-select: none; }
-        .file-item input { background: #222; border: 1px solid #444; color: #fff; text-align: center; }
         #workArea { 
             position: relative; 
             background: #050505; 
@@ -168,12 +157,125 @@
             max-height: 80vh;
             object-fit: contain;
         }
-        .btn { border: 1px solid #444; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 5px; transition: 0.2s; }
-        .btn-build { background: var(--accent-white); color: #000; font-size: 14px; margin-top: 15px; border: none; text-transform: uppercase; letter-spacing: 1px; }
+
+        .file-list { 
+            margin-top: 15px;
+            padding: 15px;
+            background: #111;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 3px;
+            justify-content: flex-start;
+            align-content: flex-start;
+            max-height: 420px;
+            overflow-y: auto;
+        }
+.file-item { 
+    width: 98px;
+    flex: 0 0 98px;
+    padding: 8px;
+    background: #1a1a1a;
+    border: 1px solid #333;
+    border-radius: 6px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 12px;
+    cursor: grab;
+    position: relative;
+    transition: none;
+}
+
+.file-item:hover { 
+    background: #222;
+    border-color: #555;
+}
+.file-item .buttons-row {
+    display: flex;
+    gap: 6px;
+    width: 100%;
+    justify-content: center;
+}
+.file-item .layer-btn {
+    flex: 1;
+    max-width: 44px;
+    height: 26px;
+    font-size: 13px;
+    padding: 0;
+    min-width: unset;
+}
+
+.drop-zone-between.active {
+    background: #ffffff !important;
+    box-shadow: 0 0 2px rgba(255,255,255,0.6);
+    border-radius: 3px;
+}
+.drop-zone-between {
+    cursor: default;
+}
+
+        .file-item.ghost { opacity: 0.3; background: #222; }
+        .file-item img { 
+            width: 72px; 
+            height: 72px; 
+            object-fit: contain; 
+            border: 1px solid #333; 
+            background: #fff; 
+            border-radius: 4px; 
+        }
+        
+        .file-item input { 
+            background: #222; 
+            border: 1px solid #444; 
+            color: #fff; 
+            text-align: center;
+            width: 58px;
+            font-size: 11px;
+        }
+        .file-item span[style*="flex-grow"] {
+            font-size: 10px;
+            opacity: 0.75;
+            text-align: center;
+            width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .btn { 
+            border: 1px solid #444; 
+            padding: 12px; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            font-weight: bold; 
+            width: 100%; 
+            margin-top: 5px; 
+            transition: 0.2s; 
+        }
+        .btn-build { 
+            background: var(--accent-white); 
+            color: #000; 
+            font-size: 14px; 
+            margin-top: 15px; 
+            border: none; 
+            text-transform: uppercase; 
+            letter-spacing: 1px; 
+        }
         .btn-build:hover { background: #ccc; }
         .btn-build:disabled { background: #333; color: #666; cursor: not-allowed; }
         .btn-opt { 
-            background: #1a1a1a; color: #d6d6d6; border: 1px solid #d6d6d6; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; margin-top: 10px; width: auto; }
+            background: #1a1a1a; 
+            color: #d6d6d6; 
+            border: 1px solid #d6d6d6; 
+            font-size: 12px; 
+            text-transform: uppercase; 
+            letter-spacing: 1px; 
+            margin-top: 10px; 
+            width: auto; 
+        }
         .btn-opt:hover { background: #d6d6d6; color: #000; }
         #status { margin-top: 10px; text-align: center; font-size: 12px; letter-spacing: 1px; min-height: 1.2em; color: var(--text-dim); }
         #loaderStatus { color: var(--text-main); font-size: 11px; text-align: center; margin-top: 5px; display: none; text-transform: uppercase; }
@@ -241,23 +343,27 @@
                 <div style="grid-column: 1/3; height: 1px; background: #222; margin: 5px 0;"></div>
                 <div style="grid-column: 1/3; font-size: 9px; color: #555; text-transform: uppercase; letter-spacing: 2px;">ЦВЕТ ПРЕДПРОСМОТРА</div>
                 <label style="grid-column: 1/3;"> <input type="color" id="previewBgColor" value="#ffffff"></label>
-<div style="grid-column: 1/3; height: 1px; background: #222; margin: 5px 0;"></div>
-<div style="grid-column: 1/3; font-size: 9px; color: #555; text-transform: uppercase; letter-spacing: 2px;">ТАЙМИНГ НА ВСЕ КАДРЫ</div>
-<label style="grid-column: 1/3;"> 
-    <input type="number" id="globalDelay" value="10" placeholder="введите значение">
-</label>            </div>
+                <div style="grid-column: 1/3; height: 1px; background: #222; margin: 5px 0;"></div>
+                <div style="grid-column: 1/3; font-size: 9px; color: #555; text-transform: uppercase; letter-spacing: 2px;">ТАЙМИНГ НА ВСЕ КАДРЫ</div>
+                <label style="grid-column: 1/3;"> 
+                    <input type="number" id="globalDelay" value="10" placeholder="введите значение">
+                </label>
+            </div>
 
-            <div class="file-list" id="fileList"></div>
             <button class="btn btn-build" id="buildBtn" disabled>СОЗДАТЬ APNG</button>
             <button class="btn btn-build" id="gifBtn" disabled onclick="createGIF()">СОЗДАТЬ GIF</button>
             <button class="btn btn-build" id="spriteBtn" disabled onclick="createSprite()">СОЗДАТЬ СПРАЙТ</button>
             <div id="loaderStatus">LOADING...</div>
             <div id="status"></div>
         </div>
+        
         <div class="main">
             <div id="workArea">
                 <canvas id="bgCanvasPreview"></canvas>
             </div>
+
+            <div class="file-list" id="fileList"></div>
+
             <div id="resultContainer">
                 <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 15px;">Preview</div>
                 <img id="finalPreview">
@@ -273,6 +379,7 @@
 <script>
     let bgImg = null;
     let loadedFrames = [];
+    let nextFrameNumber = 1;
     let offX = 0, offY = 0, currentFrameIdx = 0;
     let pads = { top: 0, bottom: 0, left: 0, right: 0 };
     let animationTimer = null;
@@ -319,38 +426,137 @@
         if(!f.length) return;
         loader.style.display = "block";
         const sorted = Array.from(f).sort((a,b) => a.name.localeCompare(b.name, undefined, {numeric:true}));
-        for(let file of sorted) {
-            const buffer = await file.arrayBuffer();
-            const imgData = UPNG.decode(buffer);
-            if (imgData.frames && imgData.frames.length > 1) {
+        for (let file of sorted) {
+    loader.style.display = "block";
+
+    try {
+        const buffer = await file.arrayBuffer();
+        const uint8 = new Uint8Array(buffer);
+
+        let handled = false;
+
+        if (file.name.toLowerCase().endsWith('.gif')) {
+    try {
+        const parsedGif = parseGIF(uint8);
+
+        if (!parsedGif || !parsedGif.frames || parsedGif.frames.length === 0) {
+            throw new Error("Нет кадров или неверный формат GIF");
+        }
+
+        const parsedFrames = decompressFrames(parsedGif, true);
+
+        handled = true;
+
+        const width = parsedGif.lsd.width;
+        const height = parsedGif.lsd.height;
+
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = width;
+        tempCanvas.height = height;
+        const tCtx = tempCanvas.getContext('2d', { alpha: true });
+
+        const backgroundColor = parsedGif.lsd.backgroundColorIndex !== undefined 
+            ? parsedGif.lsd.backgroundColorIndex 
+            : 0;
+
+        let previousState = null;
+
+        for (let i = 0; i < parsedFrames.length; i++) {
+            const frame = parsedFrames[i];
+            const disposal = frame.disposalType || 1;
+
+            if (i > 0) {
+                const prevFrame = parsedFrames[i - 1];
+                const prevDisposal = prevFrame.disposalType || 1;
+
+                if (prevDisposal === 2) {
+                    tCtx.clearRect(prevFrame.dims.left, prevFrame.dims.top, 
+                                   prevFrame.dims.width, prevFrame.dims.height);
+                } else if (prevDisposal === 3 && previousState) {
+                    tCtx.putImageData(previousState, 0, 0);
+                }
+            }
+
+            if (disposal === 3) {
+                previousState = tCtx.getImageData(0, 0, width, height);
+            }
+
+            const imgData = tCtx.createImageData(frame.dims.width, frame.dims.height);
+            imgData.data.set(frame.patch);
+            tCtx.putImageData(imgData, frame.dims.left, frame.dims.top);
+
+            const dataURL = tempCanvas.toDataURL('image/png');
+            const fImg = new Image();
+            fImg.src = dataURL;
+
+            await new Promise(resolve => {
+                fImg.onload = resolve;
+                fImg.onerror = resolve;
+            });
+
+            loadedFrames.push({
+                img: fImg,
+                name: `${file.name}_${i + 1}`,
+                delay: Math.round(frame.delay / 10) || 10, frameNumber: nextFrameNumber++
+            });
+        }
+
+        console.log(`GIF обработан: ${file.name} — ${parsedFrames.length} кадров`);
+
+    } catch (gifErr) {
+        console.warn(`Ошибка GIF ${file.name}:`, gifErr);
+    }
+}
+
+        if (!handled) {
+            try {
+                console.time(`UPNG.decode ${file.name}`);
+                const imgData = UPNG.decode(buffer);
                 const framesRGBA = UPNG.toRGBA8(imgData);
+
                 for (let i = 0; i < framesRGBA.length; i++) {
                     const rgba = new Uint8ClampedArray(framesRGBA[i]);
                     const fImg = await rgbaToImage(rgba, imgData.width, imgData.height);
-                    loadedFrames.push({ 
-                        img: fImg, 
-                        name: `${file.name}_${i}`, 
-                        delay: Math.round(imgData.frames[i].delay / 10) 
+                    loadedFrames.push({
+                        img: fImg,
+                        name: `${file.name}_${i}`,
+                        delay: imgData.frames && imgData.frames[i] ? Math.round(imgData.frames[i].delay / 10) : 10, frameNumber: nextFrameNumber++
                     });
                 }
-            } else {
-                const img = await loadImage(file);
-                loadedFrames.push({ img, name: file.name, delay: 10 });
+                console.timeEnd(`UPNG.decode ${file.name}`);
+            } catch (pngErr) {
+                console.warn(`UPNG failed for ${file.name}:`, pngErr);
+
+                const url = URL.createObjectURL(new Blob([buffer], { type: 'image/png' }));
+                const img = await loadImage(url);
+                loadedFrames.push({ img, name: file.name, delay: 10, frameNumber: nextFrameNumber++ });
             }
         }
-        updateCanvasSize();
-        renderList();
-        loader.style.display = "none";
-        if (!animationTimer) startPreviewLoop();
+
+    } catch (outerErr) {
+        console.error(`Общая ошибка ${file.name}:`, outerErr);
+        try {
+            const url = URL.createObjectURL(file);
+            const img = await loadImage(url);
+            loadedFrames.push({ img, name: file.name, delay: 10, frameNumber: nextFrameNumber++ });
+        } catch (fbErr) {
+            console.error(`Fallback failed ${file.name}:`, fbErr);
+        }
+    }
+}
+
+updateCanvasSize();
+renderList();
+loader.style.display = "none";
+if (!animationTimer) startPreviewLoop();
     });
-document.getElementById('globalDelay').oninput = e => {
+    document.getElementById('globalDelay').oninput = e => {
     const val = parseInt(e.target.value);
     if (isNaN(val)) return;
 
     loadedFrames.forEach(f => f.delay = val);
 
-    const delayInputs = document.querySelectorAll('.delay-input');
-    delayInputs.forEach(input => {
+    document.querySelectorAll('.delay-input').forEach(input => {
         input.value = val;
     });
 };
@@ -368,15 +574,24 @@ document.getElementById('globalDelay').oninput = e => {
         });
     }
     function removeBg() { bgImg = null; updateCanvasSize(); }
-    function clearAllFrames() { loadedFrames = []; renderList(); updateCanvasSize(); }
+    function clearAllFrames() { 
+    loadedFrames = []; 
+    nextFrameNumber = 1;
+    renderList(); 
+    updateCanvasSize(); 
+}
     function removeFrame(idx) { loadedFrames.splice(idx, 1); renderList(); updateCanvasSize(); }
     function duplicateFrame(idx) {
-        const frame = loadedFrames[idx];
-        const copy = { ...frame, name: frame.name + "_copy" };
-        loadedFrames.splice(idx + 1, 0, copy);
-        renderList();
-        updateCanvasSize();
-    }
+    const frame = loadedFrames[idx];
+    const copy = { 
+        ...frame, 
+        name: frame.name + "_copy",
+        frameNumber: nextFrameNumber++
+    };
+    loadedFrames.splice(idx + 1, 0, copy);
+    renderList();
+    updateCanvasSize();
+}
     function startPreviewLoop() {
         if(animationTimer) clearTimeout(animationTimer);
         const loop = () => {
@@ -395,57 +610,129 @@ document.getElementById('globalDelay').oninput = e => {
         loop();
     }
     function renderList() {
-        const container = document.getElementById('fileList');
-        container.innerHTML = loadedFrames.map((f, i) => `
-            <div class="file-item" draggable="true" data-index="${i}">
-                <span class="drag-handle">::</span>
-                <img src="${f.img.src}">
-                <input type="number" class="delay-input" value="${f.delay || 10}" style="width:35px; border-radius:2px; padding:2px;">
-                <span style="flex-grow:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; opacity:0.7">${f.name}</span>
+    const container = document.getElementById('fileList');
+    container.innerHTML = '';
+    container.appendChild(createDropZone(-1));
+
+    loadedFrames.forEach((f, i) => {
+        const item = document.createElement('div');
+        item.className = 'file-item';
+        item.draggable = true;
+        item.dataset.index = i;
+        item.innerHTML = `
+            <img src="${f.img.src}">
+            <input type="number" class="delay-input" value="${f.delay || 10}" data-index="${i}">
+            <span class="name">${f.frameNumber}</span>
+            <div class="buttons-row">
                 <button class="layer-btn" title="Дублировать" onclick="duplicateFrame(${i})">❐</button>
                 <button class="layer-btn" title="Удалить" onclick="removeFrame(${i})">X</button>
             </div>
-        `).join('');
-        container.querySelectorAll('.file-item').forEach(item => {
-            item.addEventListener('dragstart', handleDragStart);
-            item.addEventListener('dragover', handleDragOver);
-            item.addEventListener('dragleave', handleDragLeave);
-            item.addEventListener('drop', handleDrop);
-            item.addEventListener('dragend', handleDragEnd);
+        `;
+        container.appendChild(item);
+
+        container.appendChild(createDropZone(i));
+    });
+
+    container.querySelectorAll('.file-item').forEach(item => {
+        item.addEventListener('dragstart', handleDragStart);
+        item.addEventListener('dragend',   handleDragEnd);
+    });
+
+    container.querySelectorAll('.drop-zone-between').forEach(zone => {
+        zone.addEventListener('dragover',  handleDragOverBetween);
+        zone.addEventListener('dragleave', handleDragLeaveBetween);
+        zone.addEventListener('drop',      handleDropBetween);
+    });
+
+    container.querySelectorAll('.delay-input').forEach(input => {
+        input.addEventListener('input', (e) => {
+            const idx = parseInt(e.target.dataset.index);
+            const val = parseInt(e.target.value) || 10;
+            if (!isNaN(idx) && loadedFrames[idx]) {
+                loadedFrames[idx].delay = val;
+            }
         });
-        const hasFrames = loadedFrames.length > 0;
-        document.getElementById('buildBtn').disabled = !hasFrames;
-        document.getElementById('spriteBtn').disabled = !hasFrames;
-        document.getElementById('gifBtn').disabled = !hasFrames;
+    });
+
+    const hasFrames = loadedFrames.length > 0;
+    document.getElementById('buildBtn').disabled = !hasFrames;
+    document.getElementById('spriteBtn').disabled = !hasFrames;
+    document.getElementById('gifBtn').disabled = !hasFrames;
+}
+
+    function createDropZone(afterIndex) {
+    const zone = document.createElement('div');
+    zone.className = 'drop-zone-between';
+    zone.dataset.after = afterIndex;
+    zone.style.cssText = `
+        width: 12px;
+        flex: 0 0 12px;
+        height: 175.2px;
+        background: transparent;
+        transition: background 0.18s;
+    `;
+    return zone;
+}
+
+    function handleDragStart(e) {
+    dragSrcEl = this.closest('.file-item');
+    if (!dragSrcEl) return;
+    e.dataTransfer.effectAllowed = 'move';
+    dragSrcEl.classList.add('ghost');
+}
+
+function handleDragEnd(e) {
+    document.querySelectorAll('.drop-zone-between.active').forEach(el => {
+        el.classList.remove('active');
+    });
+    if (dragSrcEl) {
+        dragSrcEl.classList.remove('ghost');
+        dragSrcEl = null;
     }
-    function handleDragStart(e) { dragSrcEl = this; e.dataTransfer.effectAllowed = 'move'; this.classList.add('ghost'); }
-    function handleDragOver(e) {
-        if (e.preventDefault) e.preventDefault();
-        const rect = this.getBoundingClientRect();
-        const midpoint = rect.top + rect.height / 2;
-        this.classList.remove('drag-over-top', 'drag-over-bottom');
-        if (e.clientY < midpoint) { this.classList.add('drag-over-top'); } else { this.classList.add('drag-over-bottom'); }
-        return false;
+}
+
+function handleDragOverBetween(e) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    document.querySelectorAll('.drop-zone-between.active').forEach(el => el.classList.remove('active'));
+    this.classList.add('active');
+}
+
+function handleDragLeaveBetween(e) {
+    this.classList.remove('active');
+}
+
+function handleDropBetween(e) {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!dragSrcEl) return;
+
+    const from = parseInt(dragSrcEl.dataset.index);
+    const toAfter = parseInt(this.dataset.after);
+
+    let insertIndex;
+    if (toAfter === -1) {
+        insertIndex = 0;
+    } else {
+        insertIndex = toAfter + 1;
     }
-    function handleDragLeave() { this.classList.remove('drag-over-top', 'drag-over-bottom'); }
-    function handleDrop(e) {
-        if (e.stopPropagation) e.stopPropagation();
-        const from = parseInt(dragSrcEl.dataset.index);
-        let to = parseInt(this.dataset.index);
-        if (this.classList.contains('drag-over-bottom')) { to++; }
-        this.classList.remove('drag-over-top', 'drag-over-bottom');
-        if (from !== to && from !== to - 1) {
-            const movedItem = loadedFrames.splice(from, 1)[0];
-            const newTo = from < to ? to - 1 : to;
-            loadedFrames.splice(newTo, 0, movedItem);
-            renderList();
-        }
-        return false;
+
+    if (from < insertIndex) {
+        insertIndex--;
     }
-    function handleDragEnd() { 
-        this.classList.remove('ghost');
-        document.querySelectorAll('.file-item').forEach(el => el.classList.remove('drag-over-top', 'drag-over-bottom'));
+
+    if (from === insertIndex) {
+        handleDragEnd();
+        return;
     }
+
+    const [moved] = loadedFrames.splice(from, 1);
+    loadedFrames.splice(insertIndex, 0, moved);
+
+    handleDragEnd();
+    renderList();
+}
     let isDraggingCanvas = false;
     canvas.onmousedown = () => isDraggingCanvas = true;
     window.onmouseup = () => isDraggingCanvas = false;
