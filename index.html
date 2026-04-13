@@ -823,28 +823,21 @@
     };
 
     async function createSprite() {
-        const st = document.getElementById('status');
-        st.innerText = "СОЗДАНИЕ СПРАЙТА...";
-        try {
-            const W = canvas.width, H = canvas.height;
-            const spriteCanvas = document.createElement('canvas');
-            spriteCanvas.width = W * loadedFrames.length;
-            spriteCanvas.height = H;
-            const sCtx = spriteCanvas.getContext('2d');
-
-            loadedFrames.forEach((f, i) => {
-                const x = i * W;
-                if (bgImg && bgMode === "behind") sCtx.drawImage(bgImg, x + pads.left, pads.top);
-                sCtx.drawImage(f.img, x + offX + pads.left, x + offY + pads.top);
-                if (bgImg && bgMode === "above") sCtx.drawImage(bgImg, x + pads.left, pads.top);
-            });
-
-            spriteCanvas.toBlob(blob => {
-                displayResult(blob, "sprite_sheet.png", true);
-                st.innerText = "";
-            }, 'image/png');
-        } catch (e) { console.error(e); st.innerText = "ОШИБКА"; }
-    }
+    const st = document.getElementById('status');
+    st.innerText = "СОЗДАНИЕ СПРАЙТА...";
+    const W = canvas.width, H = canvas.height;
+    const sc = document.createElement('canvas');
+    sc.width = W * loadedFrames.length;
+    sc.height = H;
+    const ctx = sc.getContext('2d');
+    loadedFrames.forEach((f,i) => {
+        const x = i * W;
+        bgImg && bgMode === "behind" && ctx.drawImage(bgImg, x + pads.left, pads.top);
+        ctx.drawImage(f.img, x + offX + pads.left, offY + pads.top);
+        bgImg && bgMode === "above" && ctx.drawImage(bgImg, x + pads.left, pads.top);
+    });
+    sc.toBlob(b => { displayResult(b, "sprite_sheet.png", true); st.innerText = ""; }, 'image/png');
+}
 
     async function optimizeAPNG() {
         const st = document.getElementById('status');
