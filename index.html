@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -10,7 +9,6 @@
     <script src="https://cdn.jsdelivr.net/gh/photopea/UPNG.js@latest/UPNG.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/gifuct-js@2.1.2/dist/gifuct-js.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
     <script type="module">
         import { parseGIF, decompressFrames } from 'https://cdn.jsdelivr.net/npm/gifuct-js@2.1.2/+esm';
         window.parseGIF = parseGIF;
@@ -311,6 +309,50 @@
             background: #ffffff !important;
             box-shadow: 0 0 2px rgba(255,255,255,0.6);
         }
+
+        #toastContainer {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 9999;
+            max-width: 320px;
+        }
+        .toast {
+            background: #c42b1c;
+            color: black;
+            padding: 14px 18px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.6);
+            font-size: 14px;
+            cursor: pointer;
+            animation: toastIn 0.3s ease forwards;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+        .toast.success {
+            background: #919993;
+        }
+        .toast.error {
+            background: #845752;
+        }
+        @keyframes toastIn {
+            from { transform: translateX(120%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        .toast .close {
+            font-size: 18px;
+            line-height: 1;
+            opacity: 0.8;
+        }
+        .toast .close:hover {
+            opacity: 1;
+        }
+
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: #000; }
         ::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
@@ -388,7 +430,7 @@
             </div>
 
             <button class="btn btn-build" id="buildBtn" disabled>СОЗДАТЬ APNG</button>
-            <button class="btn btn-build" id="gifBtn" disabled onclick="createGIF()">СОЗДАТЬ GIF (В РАЗРАБОТКЕ)</button>
+            <button class="btn btn-build" id="gifBtn" disabled onclick="createGIF()">СОЗДАТЬ GIF (в починке)</button>
             <button class="btn btn-build" id="spriteBtn" disabled onclick="createSprite()">СОЗДАТЬ СПРАЙТ</button>
             
             <div id="loaderStatus">LOADING...</div>
@@ -415,6 +457,9 @@
     </div>
 </div>
 
+
+<div id="toastContainer"></div>
+
 <script>
     let bgImg = null;
     let bgMode = "behind";
@@ -429,23 +474,27 @@
     const ctx = canvas.getContext('2d');
     const loader = document.getElementById('loaderStatus');
 
-    function getBaseName(filename) {
-        let name = filename.substring(0, filename.lastIndexOf('.'));
-        return name.replace(/_\d+$/, '');
-    }
+    function showToast(message, type = 'error') {
+        const container = document.getElementById('toastContainer');
+        
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        toast.innerHTML = `
+            <span>${message}</span>
+            <span class="close" onclick="this.parentElement.remove()">×</span>
+        `;
 
-    function getNextCopyNumber(originalName) {
-        let maxNum = 1;
-        loadedFrames.forEach(frame => {
-            if (frame.originalName === originalName) {
-                const match = frame.name.match(/_(\d+)$/);
-                if (match) {
-                    const num = parseInt(match[1]);
-                    if (num > maxNum) maxNum = num;
-                }
+        container.appendChild(toast);
+
+        setTimeout(() => {
+            if (toast.parentElement) toast.remove();
+        }, 2000);
+
+        toast.addEventListener('click', (e) => {
+            if (!e.target.classList.contains('close')) {
+                toast.remove();
             }
         });
-        return maxNum + 1;
     }
 
     ['padTop','padBottom','padLeft','padRight'].forEach(id => {
@@ -493,10 +542,14 @@
     setupZone('dzBg', 'bgIn', async files => {
         if (!files.length) return;
         loader.style.display = "block";
-        bgImg = await loadImage(files[0]);
-        updateCanvasSize();
+        try {
+            bgImg = await loadImage(files[0]);
+            updateCanvasSize();
+            if (!animationTimer) startPreviewLoop();
+        } catch (e) {
+            showToast("Ошибка загрузки фона", "error");
+        }
         loader.style.display = "none";
-        if (!animationTimer) startPreviewLoop();
     });
 
     setupZone('dzAnim', 'animIn', async files => {
@@ -504,6 +557,8 @@
         loader.style.display = "block";
 
         const sortedFiles = Array.from(files).sort((a,b) => a.name.localeCompare(b.name, undefined, {numeric:true}));
+
+        let successCount = 0;
 
         for (let file of sortedFiles) {
             try {
@@ -524,6 +579,7 @@
                             const tCtx = tempCanvas.getContext('2d', { alpha: true });
 
                             let previousState = null;
+                            const displayName = file.name.substring(0, file.name.lastIndexOf('.'));
 
                             for (let i = 0; i < parsedFrames.length; i++) {
                                 const frame = parsedFrames[i];
@@ -546,16 +602,15 @@
                                 fImg.src = dataURL;
                                 await new Promise(r => { fImg.onload = r; fImg.onerror = r; });
 
-                                const baseName = getBaseName(file.name);
                                 loadedFrames.push({
                                     img: fImg,
-                                    name: `${baseName}_${i+1}`,
-                                    originalName: baseName,
+                                    name: `${displayName}_${i+1}`,
                                     delay: Math.round(frame.delay / 10) || 10,
                                     frameNumber: nextFrameNumber++
                                 });
                             }
                             handled = true;
+                            successCount++;
                         }
                     } catch (e) {}
                 }
@@ -564,40 +619,48 @@
                     try {
                         const imgData = UPNG.decode(buffer);
                         const framesRGBA = UPNG.toRGBA8(imgData);
-                        const baseName = getBaseName(file.name);
+                        const displayName = file.name.substring(0, file.name.lastIndexOf('.'));
 
                         for (let i = 0; i < framesRGBA.length; i++) {
                             const rgba = new Uint8ClampedArray(framesRGBA[i]);
                             const fImg = await rgbaToImage(rgba, imgData.width, imgData.height);
+
                             loadedFrames.push({
                                 img: fImg,
-                                name: framesRGBA.length > 1 ? `${baseName}_${i+1}` : baseName,
-                                originalName: baseName,
+                                name: framesRGBA.length > 1 ? `${displayName}_${i+1}` : displayName,
                                 delay: imgData.frames && imgData.frames[i] ? Math.round(imgData.frames[i].delay / 10) : 10,
                                 frameNumber: nextFrameNumber++
                             });
                         }
+                        successCount++;
                     } catch (e) {
                         const url = URL.createObjectURL(file);
                         const img = await loadImage(url);
-                        const baseName = getBaseName(file.name);
+                        const displayName = file.name.substring(0, file.name.lastIndexOf('.'));
+
                         loadedFrames.push({
                             img: img,
-                            name: baseName,
-                            originalName: baseName,
+                            name: displayName,
                             delay: 10,
                             frameNumber: nextFrameNumber++
                         });
+                        successCount++;
                     }
                 }
             } catch (err) {
                 console.error(`Ошибка с файлом ${file.name}`);
+                showToast(`Ошибка загрузки файла: ${file.name}`, "error");
             }
         }
 
         updateCanvasSize();
         renderList();
         loader.style.display = "none";
+
+        if (successCount > 0) {
+            showToast(`Загружено ${successCount} файл(ов)`, "success");
+        }
+
         if (!animationTimer) startPreviewLoop();
     });
 
@@ -636,17 +699,13 @@
 
     function duplicateFrame(idx) {
         const frame = loadedFrames[idx];
-        const nextNum = getNextCopyNumber(frame.originalName);
-        const newName = `${frame.originalName}_${nextNum}`;
-
+        const newName = frame.name + "_copy";
         const copy = {
             ...frame,
             name: newName,
             frameNumber: nextFrameNumber++
         };
-
         loadedFrames.push(copy);
-
         renderList();
         updateCanvasSize();
     }
@@ -813,40 +872,36 @@
     }
 
     document.getElementById('buildBtn').onclick = async () => {
-        const st = document.getElementById('status');
-        st.innerText = "ОБРАБОТКА...";
         try {
             const resBuf = await encodePNG(0);
             displayResult(resBuf, "animation.png");
-            st.innerText = "";
-        } catch (e) { console.error(e); st.innerText = "ОШИБКА"; }
+            showToast("APNG успешно создан", "success");
+        } catch (e) {
+            console.error(e);
+            showToast("Ошибка создания APNG", "error");
+        }
     };
 
     async function createSprite() {
-    const st = document.getElementById('status');
-    st.innerText = "СОЗДАНИЕ СПРАЙТА...";
-    const W = canvas.width, H = canvas.height;
-    const sc = document.createElement('canvas');
-    sc.width = W * loadedFrames.length;
-    sc.height = H;
-    const ctx = sc.getContext('2d');
-    loadedFrames.forEach((f,i) => {
-        const x = i * W;
-        bgImg && bgMode === "behind" && ctx.drawImage(bgImg, x + pads.left, pads.top);
-        ctx.drawImage(f.img, x + offX + pads.left, offY + pads.top);
-        bgImg && bgMode === "above" && ctx.drawImage(bgImg, x + pads.left, pads.top);
-    });
-    sc.toBlob(b => { displayResult(b, "sprite_sheet.png", true); st.innerText = ""; }, 'image/png');
-}
-
-    async function optimizeAPNG() {
-        const st = document.getElementById('status');
-        st.innerText = "ОПТИМИЗАЦИЯ...";
         try {
-            const resBuf = await encodePNG(256);
-            displayResult(resBuf, "animation_optimized.png");
-            st.innerText = "ОПТИМИЗИРОВАНО";
-        } catch (e) { st.innerText = "ОШИБКА"; }
+            const W = canvas.width, H = canvas.height;
+            const sc = document.createElement('canvas');
+            sc.width = W * loadedFrames.length;
+            sc.height = H;
+            const sCtx = sc.getContext('2d');
+            loadedFrames.forEach((f,i) => {
+                const x = i * W;
+                if (bgImg && bgMode === "behind") sCtx.drawImage(bgImg, x + pads.left, pads.top);
+                sCtx.drawImage(f.img, x + offX + pads.left, offY + pads.top);
+                if (bgImg && bgMode === "above") sCtx.drawImage(bgImg, x + pads.left, pads.top);
+            });
+            sc.toBlob(b => {
+                displayResult(b, "sprite_sheet.png", true);
+                showToast("Спрайт успешно создан", "success");
+            }, 'image/png');
+        } catch (e) {
+            showToast("Ошибка создания спрайта", "error");
+        }
     }
 
     function displayResult(data, filename, isBlob = false) {
@@ -864,8 +919,6 @@
     }
 
     async function createGIF() {
-        const st = document.getElementById('status');
-        st.innerText = "СОЗДАНИЕ GIF...";
         try {
             const workerUrl = 'https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.worker.js';
             const workerResp = await fetch(workerUrl);
@@ -893,11 +946,14 @@
 
             gif.on('finished', blob => {
                 displayResult(blob, "animation.gif", true);
-                st.innerText = "";
+                showToast("GIF успешно создан", "success");
                 URL.revokeObjectURL(blobWorkerUrl);
             });
             gif.render();
-        } catch (e) { console.error(e); st.innerText = "ОШИБКА GIF"; }
+        } catch (e) {
+            console.error(e);
+            showToast("Ошибка создания GIF", "error");
+        }
     }
 
     function loadImage(file) {
@@ -906,6 +962,16 @@
             img.onload = () => res(img);
             img.src = URL.createObjectURL(file);
         });
+    }
+
+    async function optimizeAPNG() {
+        try {
+            const resBuf = await encodePNG(256);
+            displayResult(resBuf, "output_optimized.png");
+            showToast("APNG оптимизирован", "success");
+        } catch (e) {
+            showToast("Ошибка оптимизации APNG", "error");
+        }
     }
 
     window.removeBg = removeBg;
