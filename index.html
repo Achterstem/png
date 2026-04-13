@@ -12,13 +12,10 @@
     <script src="https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
     <script type="module">
-  import { parseGIF, decompressFrames } from 'https://cdn.jsdelivr.net/npm/gifuct-js@2.1.2/+esm';
-  
-  window.parseGIF = parseGIF;
-  window.decompressFrames = decompressFrames;
-  
-  console.log('gifuct-js загружен: parseGIF и decompressFrames доступны');
-</script>
+        import { parseGIF, decompressFrames } from 'https://cdn.jsdelivr.net/npm/gifuct-js@2.1.2/+esm';
+        window.parseGIF = parseGIF;
+        window.decompressFrames = decompressFrames;
+    </script>
     <style>
         :root {
             --bg-color: #0a0a0a;
@@ -30,107 +27,98 @@
             --input-bg: #1f1f1f;
             --hover-bg: #2a2a2a;
         }
-        body { 
-            font-family: -apple-system, system-ui, sans-serif; 
-            background: var(--bg-color); 
+        * { box-sizing: border-box; }
+        body {
+            font-family: -apple-system, system-ui, sans-serif;
+            background: var(--bg-color);
             color: var(--text-main);
-            padding: 20px; 
-            display: flex; 
-            justify-content: center; 
             margin: 0;
+            padding: 15px;
+            min-height: 100vh;
         }
-        input::-webkit-outer-spin-button,
-        input::-webkit-inner-spin-button {
-            -webkit-appearance: none;
-            margin: 0;
-        }
-        input[type=number] {
-            -moz-appearance: textfield;
-        }
-        .card { 
-            background: var(--card-bg); 
-            padding: 25px; 
-            border-radius: 12px; 
+        .card {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 12px;
             border: 1px solid var(--border-color);
-            box-shadow: 0 10px 40px rgba(0,0,0,0.5); 
-            width: 100%; 
-            max-width: 1100px; 
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
         }
-        .grid { 
-            display: grid; 
-            grid-template-columns: 360px 1fr; 
-            gap: 20px; 
+        .grid {
+            display: grid;
+            grid-template-columns: 380px 1fr;
+            gap: 20px;
         }
-        .section { 
-            margin-bottom: 15px; 
-            padding: 12px; 
-            border: 1px solid var(--border-color); 
-            border-radius: 8px; 
-            background: #1a1a1a; 
+        .section {
+            margin-bottom: 15px;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background: #1a1a1a;
         }
-        .drop-row { display: flex; gap: 5px; margin-bottom: 5px; }
-        .drop-zone { 
-            border: 1px dashed #444; 
-            padding: 10px; 
-            text-align: center; 
-            border-radius: 8px; 
-            cursor: pointer; 
-            color: var(--text-dim); 
-            font-size: 13px; 
-            flex-grow: 1; 
-            transition: all 0.2s; 
-        }
-        .drop-zone:hover { border-color: var(--accent-white); color: var(--accent-white); background: var(--hover-bg); }
-        .btn-del-small { 
-            background: #1a1a1a; 
-            border: 1px solid #444; 
-            border-radius: 8px; 
-            cursor: pointer; 
-            padding: 0 12px; 
-            color: var(--text-main); 
-            transition: 0.2s; 
-        }
-        .btn-del-small:hover { background: #333; border-color: #888; }
-        .layer-btn { 
-            background: #1a1a1a; 
-            border: 1px solid #444; 
-            border-radius: 8px; 
-            cursor: pointer; 
-            padding: 2px 8px; 
-            color: var(--text-dim); 
-            font-size: 11px;
-            transition: 0.2s; 
-            box-sizing: border-box;
+        .drop-row {
             display: flex;
-            align-items: center;
-            justify-content: center;
-            height: 24px;
+            gap: 5px;
+            margin-bottom: 5px;
         }
-        .layer-btn:hover { 
-            background: #2a2a2a; 
-            border-color: var(--accent-white); 
-            color: #fff; 
+        .drop-zone {
+            border: 1px dashed #444;
+            padding: 12px;
+            text-align: center;
+            border-radius: 8px;
+            cursor: pointer;
+            color: var(--text-dim);
+            font-size: 13px;
+            flex-grow: 1;
+            transition: all 0.2s;
         }
-        .controls-panel { 
-            background: #111; 
-            color: #fff; 
-            padding: 15px; 
-            border-radius: 8px; 
-            margin-bottom: 10px; 
-            display: grid; 
-            grid-template-columns: 1fr 1fr; 
-            gap: 12px; 
+        .drop-zone:hover {
+            border-color: var(--accent-white);
+            color: var(--accent-white);
+            background: var(--hover-bg);
+        }
+        .btn-del-small {
+            background: #1a1a1a;
+            border: 1px solid #444;
+            border-radius: 8px;
+            cursor: pointer;
+            padding: 0 12px;
+            color: var(--text-main);
+        }
+        .btn-del-small:hover {
+            background: #333;
+            border-color: #888;
+        }
+        .controls-panel {
+            background: #111;
+            color: #fff;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
             border: 1px solid var(--border-color);
         }
-        .controls-panel label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-dim); display: flex; flex-direction: column; gap: 5px; }
-        .controls-panel input { 
-            background: var(--input-bg); 
-            border: 1px solid #333; 
-            color: #fff; 
-            padding: 8px; 
-            border-radius: 4px; 
-            width: 100%; 
-            box-sizing: border-box; 
+        .controls-panel label {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-dim);
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        .controls-panel input {
+            background: var(--input-bg);
+            border: 1px solid #333;
+            color: #fff;
+            padding: 8px;
+            border-radius: 4px;
+            width: 100%;
+            box-sizing: border-box;
             text-align: center;
         }
         .controls-panel input[type=color] {
@@ -138,28 +126,27 @@
             height: 32px;
             cursor: pointer;
         }
-        #workArea { 
-            position: relative; 
-            background: #050505; 
-            border-radius: 8px; 
-            overflow: hidden; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            min-height: 450px; 
+        #workArea {
+            position: relative;
+            background: #050505;
+            border-radius: 8px;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 450px;
             border: 1px solid var(--border-color);
             padding: 10px;
         }
-        #bgCanvasPreview { 
-            background-color: #ffffff; 
-            box-shadow: 0 0 30px rgba(0,0,0,0.8); 
+        #bgCanvasPreview {
+            background-color: #ffffff;
+            box-shadow: 0 0 30px rgba(0,0,0,0.8);
             cursor: move;
             max-width: 100%;
-            max-height: 80vh;
+            max-height: 75vh;
             object-fit: contain;
         }
-
-        .file-list { 
+        .file-list {
             margin-top: 15px;
             padding: 15px;
             background: #111;
@@ -167,151 +154,180 @@
             border-radius: 8px;
             display: flex;
             flex-wrap: wrap;
-            gap: 3px;
+            gap: 8px;
             justify-content: flex-start;
-            align-content: flex-start;
             max-height: 420px;
             overflow-y: auto;
         }
-.file-item { 
-    width: 98px;
-    flex: 0 0 98px;
-    padding: 8px;
-    background: #1a1a1a;
-    border: 1px solid #333;
-    border-radius: 6px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 6px;
-    margin-bottom: 12px;
-    cursor: grab;
-    position: relative;
-    transition: none;
-}
-
-.file-item:hover { 
-    background: #222;
-    border-color: #555;
-}
-.file-item .buttons-row {
-    display: flex;
-    gap: 6px;
-    width: 100%;
-    justify-content: center;
-}
-.file-item .layer-btn {
-    flex: 1;
-    max-width: 44px;
-    height: 26px;
-    font-size: 13px;
-    padding: 0;
-    min-width: unset;
-}
-
-.drop-zone-between.active {
-    background: #ffffff !important;
-    box-shadow: 0 0 2px rgba(255,255,255,0.6);
-    border-radius: 3px;
-}
-.drop-zone-between {
-    cursor: default;
-}
-
-        .file-item.ghost { opacity: 0.3; background: #222; }
-        .file-item img { 
-            width: 72px; 
-            height: 72px; 
-            object-fit: contain; 
-            border: 1px solid #333; 
-            background: #fff; 
-            border-radius: 4px; 
+        .file-item {
+            width: 110px;
+            flex: 0 0 110px;
+            padding: 8px;
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 6px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            cursor: grab;
+            position: relative;
         }
-        
-        .file-item input { 
-            background: #222; 
-            border: 1px solid #444; 
-            color: #fff; 
-            text-align: center;
-            width: 58px;
+        .file-item:hover {
+            background: #222;
+            border-color: #555;
+        }
+        .file-item img {
+            width: 80px;
+            height: 80px;
+            object-fit: contain;
+            border: 1px solid #333;
+            background: #fff;
+            border-radius: 4px;
+        }
+        .file-item .name {
             font-size: 11px;
-        }
-        .file-item span[style*="flex-grow"] {
-            font-size: 10px;
-            opacity: 0.75;
+            opacity: 0.85;
             text-align: center;
             width: 100%;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
         }
-
-        .btn { 
-            border: 1px solid #444; 
-            padding: 12px; 
-            border-radius: 6px; 
-            cursor: pointer; 
-            font-weight: bold; 
-            width: 100%; 
-            margin-top: 5px; 
-            transition: 0.2s; 
+        .file-item input {
+            background: #222;
+            border: 1px solid #444;
+            color: #fff;
+            text-align: center;
+            width: 60px;
+            font-size: 11px;
         }
-        .btn-build { 
-            background: var(--accent-white); 
-            color: #000; 
-            font-size: 14px; 
-            margin-top: 15px; 
-            border: none; 
-            text-transform: uppercase; 
-            letter-spacing: 1px; 
+        .buttons-row {
+            display: flex;
+            gap: 6px;
+            width: 100%;
+            justify-content: center;
+        }
+        .layer-btn {
+            background: #1a1a1a;
+            border: 1px solid #444;
+            border-radius: 6px;
+            cursor: pointer;
+            padding: 4px 8px;
+            color: var(--text-dim);
+            font-size: 13px;
+            transition: 0.2s;
+            flex: 1;
+        }
+        .layer-btn:hover {
+            background: #2a2a2a;
+            border-color: var(--accent-white);
+            color: #fff;
+        }
+        .btn {
+            border: 1px solid #444;
+            padding: 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            width: 100%;
+            margin-top: 5px;
+            transition: 0.2s;
+        }
+        .btn-build {
+            background: var(--accent-white);
+            color: #000;
+            font-size: 14px;
+            margin-top: 15px;
+            border: none;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
         .btn-build:hover { background: #ccc; }
         .btn-build:disabled { background: #333; color: #666; cursor: not-allowed; }
-        .btn-opt { 
-            background: #1a1a1a; 
-            color: #d6d6d6; 
-            border: 1px solid #d6d6d6; 
-            font-size: 12px; 
-            text-transform: uppercase; 
-            letter-spacing: 1px; 
-            margin-top: 10px; 
-            width: auto; 
+        .btn-opt {
+            background: #1a1a1a;
+            color: #d6d6d6;
+            border: 1px solid #d6d6d6;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 10px;
+            width: auto;
         }
         .btn-opt:hover { background: #d6d6d6; color: #000; }
-        #status { margin-top: 10px; text-align: center; font-size: 12px; letter-spacing: 1px; min-height: 1.2em; color: var(--text-dim); }
-        #loaderStatus { color: var(--text-main); font-size: 11px; text-align: center; margin-top: 5px; display: none; text-transform: uppercase; }
-        #resultContainer { 
-            margin-top: 25px; 
-            padding: 20px; 
-            border: 1px solid var(--accent-white); 
-            border-radius: 8px; 
-            background: #000; 
-            display: none; 
+        #status {
+            margin-top: 10px;
+            text-align: center;
+            font-size: 12px;
+            letter-spacing: 1px;
+            min-height: 1.2em;
+            color: var(--text-dim);
+        }
+        #loaderStatus {
+            color: var(--text-main);
+            font-size: 11px;
+            text-align: center;
+            margin-top: 5px;
+            display: none;
+            text-transform: uppercase;
+        }
+        #resultContainer {
+            margin-top: 25px;
+            padding: 20px;
+            border: 1px solid var(--accent-white);
+            border-radius: 8px;
+            background: #000;
+            display: none;
             text-align: center;
         }
-        #finalPreview { 
-            max-width: 100%; 
+        #finalPreview {
+            max-width: 100%;
             max-height: 600px;
             object-fit: contain;
-            border: 1px solid #333; 
-            background: white; 
-            margin-bottom: 15px; 
+            border: 1px solid #333;
+            background: white;
+            margin-bottom: 15px;
         }
-        .download-btn { 
-            display: inline-block; 
-            background: var(--accent-white); 
-            color: #000; 
-            padding: 12px 30px; 
-            text-decoration: none; 
-            border-radius: 4px; 
-            font-weight: bold; 
-            text-transform: uppercase; 
+        .download-btn {
+            display: inline-block;
+            background: var(--accent-white);
+            color: #000;
+            padding: 12px 30px;
+            text-decoration: none;
+            border-radius: 4px;
+            font-weight: bold;
+            text-transform: uppercase;
             font-size: 12px;
+        }
+        .drop-zone-between {
+            width: 12px;
+            flex: 0 0 12px;
+            height: 175px;
+            background: transparent;
+            transition: background 0.18s;
+        }
+        .drop-zone-between.active {
+            background: #ffffff !important;
+            box-shadow: 0 0 2px rgba(255,255,255,0.6);
         }
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: #000; }
         ::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
         ::-webkit-scrollbar-thumb:hover { background: #444; }
+
+        @media (max-width: 900px) {
+            .grid { grid-template-columns: 1fr; }
+            .file-list { max-height: 380px; }
+            #workArea { min-height: 380px; }
+        }
+        @media (max-width: 600px) {
+            body { padding: 10px; }
+            .card { padding: 15px; }
+            .file-item { width: 96px; flex: 0 0 96px; }
+            .file-item img { width: 70px; height: 70px; }
+            #workArea { min-height: 320px; }
+        }
     </style>
 </head>
 <body>
@@ -319,6 +335,7 @@
     <div class="grid">
         <div class="sidebar">
             <h3 style="margin-top:0; letter-spacing: 2px; text-transform: uppercase; font-size: 18px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">ANIMaker</h3>
+            
             <div class="section">
                 <div class="drop-row">
                     <div id="dzBg" class="drop-zone">ВЫБРАТЬ ФОН (опционально)</div>
@@ -328,40 +345,52 @@
                     <div id="dzAnim" class="drop-zone">ВЫБРАТЬ КАДРЫ</div>
                     <button class="btn-del-small" title="Очистить" onclick="clearAllFrames()">X</button>
                 </div>
-                <input type="file" id="bgIn" style="display:none">
-                <input type="file" id="animIn" multiple style="display:none">
+                <input type="file" id="bgIn" style="display:none" accept="image/*">
+                <input type="file" id="animIn" multiple style="display:none" accept="image/*,.gif">
             </div>
+
             <div class="controls-panel">
-               <div style="grid-column: 1/3; font-size: 9px; color: #555; text-transform: uppercase; letter-spacing: 2px; margin-top:8px;">
-    ФОН ОТНОСИТЕЛЬНО АНИМАЦИИ
-</div>
-<select id="bgLayer" style="grid-column: 1/3; padding:8px; background:#222; color:#eee; border:1px solid #444; border-radius:4px;">
-    <option value="behind">ПОД АНИМАЦИЕЙ</option>
-    <option value="above">НАД АНИМАЦИЕЙ</option>
-</select>
-                <div style="grid-column: 1/3; height: 1px; background: #222; margin: 5px 0;"></div>
+                <div style="grid-column: 1/3; font-size: 9px; color: #555; text-transform: uppercase; letter-spacing: 2px; margin-top:8px;">
+                    ФОН ОТНОСИТЕЛЬНО АНИМАЦИИ
+                </div>
+                <select id="bgLayer" style="grid-column: 1/3; padding:8px; background:#222; color:#eee; border:1px solid #444; border-radius:4px;">
+                    <option value="behind">ПОД АНИМАЦИЕЙ</option>
+                    <option value="above">НАД АНИМАЦИЕЙ</option>
+                </select>
+
+                <div style="grid-column: 1/3; height: 1px; background: #222; margin: 8px 0;"></div>
+
                 <div style="grid-column: 1/3; font-size: 9px; color: #555; text-transform: uppercase; letter-spacing: 2px;">РАЗМЕР ХОЛСТА</div>
                 <label>Верх <input type="number" id="padTop" value="0"></label>
                 <label>Низ <input type="number" id="padBottom" value="0"></label>
                 <label>Лево <input type="number" id="padLeft" value="0"></label>
                 <label>Право <input type="number" id="padRight" value="0"></label>
-                <div style="grid-column: 1/3; height: 1px; background: #222; margin: 5px 0;"></div>
+
+                <div style="grid-column: 1/3; height: 1px; background: #222; margin: 8px 0;"></div>
+
                 <div style="grid-column: 1/3; font-size: 9px; color: #555; text-transform: uppercase; letter-spacing: 2px;">ПОЗИЦИЯ АНИМАЦИИ</div>
                 <label>X Pos <input type="number" id="posX" value="0"></label>
                 <label>Y Pos <input type="number" id="posY" value="0"></label>
-                <div style="grid-column: 1/3; height: 1px; background: #222; margin: 5px 0;"></div>
+
+                <div style="grid-column: 1/3; height: 1px; background: #222; margin: 8px 0;"></div>
+
                 <div style="grid-column: 1/3; font-size: 9px; color: #555; text-transform: uppercase; letter-spacing: 2px;">ЦВЕТ ПРЕДПРОСМОТРА</div>
-                <label style="grid-column: 1/3;"> <input type="color" id="previewBgColor" value="#ffffff"></label>
-                <div style="grid-column: 1/3; height: 1px; background: #222; margin: 5px 0;"></div>
+                <label style="grid-column: 1/3;">
+                    <input type="color" id="previewBgColor" value="#ffffff">
+                </label>
+
+                <div style="grid-column: 1/3; height: 1px; background: #222; margin: 8px 0;"></div>
+
                 <div style="grid-column: 1/3; font-size: 9px; color: #555; text-transform: uppercase; letter-spacing: 2px;">ТАЙМИНГ НА ВСЕ КАДРЫ</div>
-                <label style="grid-column: 1/3;"> 
-                    <input type="number" id="globalDelay" value="10" placeholder="введите значение">
+                <label style="grid-column: 1/3;">
+                    <input type="number" id="globalDelay" value="10">
                 </label>
             </div>
 
             <button class="btn btn-build" id="buildBtn" disabled>СОЗДАТЬ APNG</button>
             <button class="btn btn-build" id="gifBtn" disabled onclick="createGIF()">СОЗДАТЬ GIF (В РАЗРАБОТКЕ)</button>
             <button class="btn btn-build" id="spriteBtn" disabled onclick="createSprite()">СОЗДАТЬ СПРАЙТ</button>
+            
             <div id="loaderStatus">LOADING...</div>
             <div id="status"></div>
         </div>
@@ -374,17 +403,18 @@
             <div class="file-list" id="fileList"></div>
 
             <div id="resultContainer">
-                <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 15px;">Preview</div>
+                <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 15px;">ПРЕВЬЮ РЕЗУЛЬТАТА</div>
                 <img id="finalPreview">
                 <div id="finalSize" style="margin-bottom:15px; font-size: 11px; color: #888;"></div>
                 <div>
                     <a id="dlBtn" class="download-btn">СКАЧАТЬ ФАЙЛ</a>
                 </div>
-                <button class="btn btn-opt" id="optBtn" onclick="optimizeAPNG()">ОПТИМИЗИРОВАТЬ</button>
+                <button class="btn btn-opt" id="optBtn" onclick="optimizeAPNG()">ОПТИМИЗИРОВАТЬ APNG</button>
             </div>
         </div>
     </div>
 </div>
+
 <script>
     let bgImg = null;
     let bgMode = "behind";
@@ -394,27 +424,54 @@
     let pads = { top: 0, bottom: 0, left: 0, right: 0 };
     let animationTimer = null;
     let dragSrcEl = null;
+
     const canvas = document.getElementById('bgCanvasPreview');
     const ctx = canvas.getContext('2d');
     const loader = document.getElementById('loaderStatus');
+
+    function getBaseName(filename) {
+        let name = filename.substring(0, filename.lastIndexOf('.'));
+        return name.replace(/_\d+$/, '');
+    }
+
+    function getNextCopyNumber(originalName) {
+        let maxNum = 1;
+        loadedFrames.forEach(frame => {
+            if (frame.originalName === originalName) {
+                const match = frame.name.match(/_(\d+)$/);
+                if (match) {
+                    const num = parseInt(match[1]);
+                    if (num > maxNum) maxNum = num;
+                }
+            }
+        });
+        return maxNum + 1;
+    }
+
     ['padTop','padBottom','padLeft','padRight'].forEach(id => {
         const el = document.getElementById(id);
-        if(el) el.oninput = (e) => {
-            pads[id.replace('pad','').toLowerCase()] = parseInt(e.target.value) || 0;
+        el.oninput = () => {
+            pads[id.replace('pad','').toLowerCase()] = parseInt(el.value) || 0;
             updateCanvasSize();
+            if (loadedFrames.length > 0 || bgImg) startPreviewLoop();
         };
     });
+
     document.getElementById('bgLayer').onchange = e => {
-    bgMode = e.target.value;
-    if (loadedFrames.length > 0 || bgImg) {
-        startPreviewLoop();
-    }
-};
-    document.getElementById('posX').oninput = e => offX = parseInt(e.target.value)||0;
-    document.getElementById('posY').oninput = e => offY = parseInt(e.target.value)||0;
-    document.getElementById('previewBgColor').oninput = e => {
-        canvas.style.backgroundColor = e.target.value;
+        bgMode = e.target.value;
+        if (loadedFrames.length > 0 || bgImg) startPreviewLoop();
     };
+
+    document.getElementById('posX').oninput = e => offX = parseInt(e.target.value) || 0;
+    document.getElementById('posY').oninput = e => offY = parseInt(e.target.value) || 0;
+    document.getElementById('previewBgColor').oninput = e => canvas.style.backgroundColor = e.target.value;
+
+    document.getElementById('globalDelay').oninput = e => {
+        const val = parseInt(e.target.value) || 10;
+        loadedFrames.forEach(f => f.delay = val);
+        document.querySelectorAll('.delay-input').forEach(input => input.value = val);
+    };
+
     function updateCanvasSize() {
         let w = 100, h = 100;
         if (bgImg) { w = bgImg.width; h = bgImg.height; }
@@ -422,474 +479,449 @@
         canvas.width = w + pads.left + pads.right;
         canvas.height = h + pads.top + pads.bottom;
     }
+
     function setupZone(id, inId, cb) {
-        const z = document.getElementById(id), i = document.getElementById(inId);
+        const z = document.getElementById(id);
+        const i = document.getElementById(inId);
         z.onclick = () => i.click();
         z.ondragover = e => { e.preventDefault(); z.style.borderColor = "#fff"; };
         z.ondragleave = () => z.style.borderColor = "#444";
         z.ondrop = e => { e.preventDefault(); z.style.borderColor = "#444"; cb(e.dataTransfer.files); };
         i.onchange = () => cb(i.files);
     }
-    setupZone('dzBg', 'bgIn', async f => {
-        if(!f.length) return;
+
+    setupZone('dzBg', 'bgIn', async files => {
+        if (!files.length) return;
         loader.style.display = "block";
-        bgImg = await loadImage(f[0]);
+        bgImg = await loadImage(files[0]);
         updateCanvasSize();
         loader.style.display = "none";
         if (!animationTimer) startPreviewLoop();
     });
-    setupZone('dzAnim', 'animIn', async f => {
-        if(!f.length) return;
+
+    setupZone('dzAnim', 'animIn', async files => {
+        if (!files.length) return;
         loader.style.display = "block";
-        const sorted = Array.from(f).sort((a,b) => a.name.localeCompare(b.name, undefined, {numeric:true}));
-        for (let file of sorted) {
-    loader.style.display = "block";
 
-    try {
-        const buffer = await file.arrayBuffer();
-        const uint8 = new Uint8Array(buffer);
+        const sortedFiles = Array.from(files).sort((a,b) => a.name.localeCompare(b.name, undefined, {numeric:true}));
 
-        let handled = false;
-
-        if (file.name.toLowerCase().endsWith('.gif')) {
-    try {
-        const parsedGif = parseGIF(uint8);
-
-        if (!parsedGif || !parsedGif.frames || parsedGif.frames.length === 0) {
-            throw new Error("Нет кадров или неверный формат GIF");
-        }
-
-        const parsedFrames = decompressFrames(parsedGif, true);
-
-        handled = true;
-
-        const width = parsedGif.lsd.width;
-        const height = parsedGif.lsd.height;
-
-        const tempCanvas = document.createElement('canvas');
-        tempCanvas.width = width;
-        tempCanvas.height = height;
-        const tCtx = tempCanvas.getContext('2d', { alpha: true });
-
-        const backgroundColor = parsedGif.lsd.backgroundColorIndex !== undefined 
-            ? parsedGif.lsd.backgroundColorIndex 
-            : 0;
-
-        let previousState = null;
-
-        for (let i = 0; i < parsedFrames.length; i++) {
-            const frame = parsedFrames[i];
-            const disposal = frame.disposalType || 1;
-
-            if (i > 0) {
-                const prevFrame = parsedFrames[i - 1];
-                const prevDisposal = prevFrame.disposalType || 1;
-
-                if (prevDisposal === 2) {
-                    tCtx.clearRect(prevFrame.dims.left, prevFrame.dims.top, 
-                                   prevFrame.dims.width, prevFrame.dims.height);
-                } else if (prevDisposal === 3 && previousState) {
-                    tCtx.putImageData(previousState, 0, 0);
-                }
-            }
-
-            if (disposal === 3) {
-                previousState = tCtx.getImageData(0, 0, width, height);
-            }
-
-            const imgData = tCtx.createImageData(frame.dims.width, frame.dims.height);
-            imgData.data.set(frame.patch);
-            tCtx.putImageData(imgData, frame.dims.left, frame.dims.top);
-
-            const dataURL = tempCanvas.toDataURL('image/png');
-            const fImg = new Image();
-            fImg.src = dataURL;
-
-            await new Promise(resolve => {
-                fImg.onload = resolve;
-                fImg.onerror = resolve;
-            });
-
-            loadedFrames.push({
-                img: fImg,
-                name: `${file.name}_${i + 1}`,
-                delay: Math.round(frame.delay / 10) || 10, frameNumber: nextFrameNumber++
-            });
-        }
-
-        console.log(`GIF обработан: ${file.name} — ${parsedFrames.length} кадров`);
-
-    } catch (gifErr) {
-        console.warn(`Ошибка GIF ${file.name}:`, gifErr);
-    }
-}
-
-        if (!handled) {
+        for (let file of sortedFiles) {
             try {
-                console.time(`UPNG.decode ${file.name}`);
-                const imgData = UPNG.decode(buffer);
-                const framesRGBA = UPNG.toRGBA8(imgData);
+                const buffer = await file.arrayBuffer();
+                const uint8 = new Uint8Array(buffer);
+                let handled = false;
 
-                for (let i = 0; i < framesRGBA.length; i++) {
-                    const rgba = new Uint8ClampedArray(framesRGBA[i]);
-                    const fImg = await rgbaToImage(rgba, imgData.width, imgData.height);
-                    loadedFrames.push({
-                        img: fImg,
-                        name: `${file.name}_${i}`,
-                        delay: imgData.frames && imgData.frames[i] ? Math.round(imgData.frames[i].delay / 10) : 10, frameNumber: nextFrameNumber++
-                    });
+                if (file.name.toLowerCase().endsWith('.gif')) {
+                    try {
+                        const parsedGif = parseGIF(uint8);
+                        if (parsedGif && parsedGif.frames && parsedGif.frames.length > 0) {
+                            const parsedFrames = decompressFrames(parsedGif, true);
+                            const width = parsedGif.lsd.width;
+                            const height = parsedGif.lsd.height;
+
+                            const tempCanvas = document.createElement('canvas');
+                            tempCanvas.width = width; tempCanvas.height = height;
+                            const tCtx = tempCanvas.getContext('2d', { alpha: true });
+
+                            let previousState = null;
+
+                            for (let i = 0; i < parsedFrames.length; i++) {
+                                const frame = parsedFrames[i];
+                                const disposal = frame.disposalType || 1;
+
+                                if (i > 0) {
+                                    const prevFrame = parsedFrames[i-1];
+                                    const prevDisposal = prevFrame.disposalType || 1;
+                                    if (prevDisposal === 2) tCtx.clearRect(prevFrame.dims.left, prevFrame.dims.top, prevFrame.dims.width, prevFrame.dims.height);
+                                    else if (prevDisposal === 3 && previousState) tCtx.putImageData(previousState, 0, 0);
+                                }
+                                if (disposal === 3) previousState = tCtx.getImageData(0, 0, width, height);
+
+                                const imgData = tCtx.createImageData(frame.dims.width, frame.dims.height);
+                                imgData.data.set(frame.patch);
+                                tCtx.putImageData(imgData, frame.dims.left, frame.dims.top);
+
+                                const dataURL = tempCanvas.toDataURL('image/png');
+                                const fImg = new Image();
+                                fImg.src = dataURL;
+                                await new Promise(r => { fImg.onload = r; fImg.onerror = r; });
+
+                                const baseName = getBaseName(file.name);
+                                loadedFrames.push({
+                                    img: fImg,
+                                    name: `${baseName}_${i+1}`,
+                                    originalName: baseName,
+                                    delay: Math.round(frame.delay / 10) || 10,
+                                    frameNumber: nextFrameNumber++
+                                });
+                            }
+                            handled = true;
+                        }
+                    } catch (e) {}
                 }
-                console.timeEnd(`UPNG.decode ${file.name}`);
-            } catch (pngErr) {
-                console.warn(`UPNG failed for ${file.name}:`, pngErr);
 
-                const url = URL.createObjectURL(new Blob([buffer], { type: 'image/png' }));
-                const img = await loadImage(url);
-                loadedFrames.push({ img, name: file.name, delay: 10, frameNumber: nextFrameNumber++ });
+                if (!handled) {
+                    try {
+                        const imgData = UPNG.decode(buffer);
+                        const framesRGBA = UPNG.toRGBA8(imgData);
+                        const baseName = getBaseName(file.name);
+
+                        for (let i = 0; i < framesRGBA.length; i++) {
+                            const rgba = new Uint8ClampedArray(framesRGBA[i]);
+                            const fImg = await rgbaToImage(rgba, imgData.width, imgData.height);
+                            loadedFrames.push({
+                                img: fImg,
+                                name: framesRGBA.length > 1 ? `${baseName}_${i+1}` : baseName,
+                                originalName: baseName,
+                                delay: imgData.frames && imgData.frames[i] ? Math.round(imgData.frames[i].delay / 10) : 10,
+                                frameNumber: nextFrameNumber++
+                            });
+                        }
+                    } catch (e) {
+                        const url = URL.createObjectURL(file);
+                        const img = await loadImage(url);
+                        const baseName = getBaseName(file.name);
+                        loadedFrames.push({
+                            img: img,
+                            name: baseName,
+                            originalName: baseName,
+                            delay: 10,
+                            frameNumber: nextFrameNumber++
+                        });
+                    }
+                }
+            } catch (err) {
+                console.error(`Ошибка с файлом ${file.name}`);
             }
         }
 
-    } catch (outerErr) {
-        console.error(`Общая ошибка ${file.name}:`, outerErr);
-        try {
-            const url = URL.createObjectURL(file);
-            const img = await loadImage(url);
-            loadedFrames.push({ img, name: file.name, delay: 10, frameNumber: nextFrameNumber++ });
-        } catch (fbErr) {
-            console.error(`Fallback failed ${file.name}:`, fbErr);
-        }
-    }
-}
-
-updateCanvasSize();
-renderList();
-loader.style.display = "none";
-if (!animationTimer) startPreviewLoop();
+        updateCanvasSize();
+        renderList();
+        loader.style.display = "none";
+        if (!animationTimer) startPreviewLoop();
     });
-    document.getElementById('globalDelay').oninput = e => {
-    const val = parseInt(e.target.value);
-    if (isNaN(val)) return;
 
-    loadedFrames.forEach(f => f.delay = val);
-
-    document.querySelectorAll('.delay-input').forEach(input => {
-        input.value = val;
-    });
-};
     function rgbaToImage(rgba, w, h) {
         return new Promise(res => {
-            const tempCanvas = document.createElement('canvas');
-            tempCanvas.width = w; tempCanvas.height = h;
-            const tCtx = tempCanvas.getContext('2d');
-            const iData = tCtx.createImageData(w, h);
-            iData.data.set(rgba);
-            tCtx.putImageData(iData, 0, 0);
+            const temp = document.createElement('canvas');
+            temp.width = w; temp.height = h;
+            const tCtx = temp.getContext('2d');
+            const idata = tCtx.createImageData(w, h);
+            idata.data.set(rgba);
+            tCtx.putImageData(idata, 0, 0);
             const img = new Image();
             img.onload = () => res(img);
-            img.src = tempCanvas.toDataURL();
+            img.src = temp.toDataURL();
         });
     }
-    function removeBg() { bgImg = null; updateCanvasSize(); }
-    function clearAllFrames() { 
-    loadedFrames = []; 
-    nextFrameNumber = 1;
-    renderList(); 
-    updateCanvasSize(); 
-}
-    function removeFrame(idx) { loadedFrames.splice(idx, 1); renderList(); updateCanvasSize(); }
+
+    function removeBg() {
+        bgImg = null;
+        updateCanvasSize();
+        if (loadedFrames.length > 0 || bgImg) startPreviewLoop();
+    }
+
+    function clearAllFrames() {
+        loadedFrames = [];
+        nextFrameNumber = 1;
+        renderList();
+        updateCanvasSize();
+    }
+
+    function removeFrame(idx) {
+        loadedFrames.splice(idx, 1);
+        renderList();
+        updateCanvasSize();
+    }
+
     function duplicateFrame(idx) {
-    const frame = loadedFrames[idx];
-    const copy = { 
-        ...frame, 
-        name: frame.name + "_copy",
-        frameNumber: nextFrameNumber++
-    };
-    loadedFrames.splice(idx + 1, 0, copy);
-    renderList();
-    updateCanvasSize();
-}
+        const frame = loadedFrames[idx];
+        const nextNum = getNextCopyNumber(frame.originalName);
+        const newName = `${frame.originalName}_${nextNum}`;
+
+        const copy = {
+            ...frame,
+            name: newName,
+            frameNumber: nextFrameNumber++
+        };
+
+        loadedFrames.push(copy);
+
+        renderList();
+        updateCanvasSize();
+    }
+
     function startPreviewLoop() {
-        if(animationTimer) clearTimeout(animationTimer);
+        if (animationTimer) clearTimeout(animationTimer);
         const loop = () => {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-if (bgImg) {
-    if (bgMode === "behind") {
-        ctx.drawImage(bgImg, pads.left, pads.top);
-    }
-}
+            if (bgImg && bgMode === "behind") {
+                ctx.drawImage(bgImg, pads.left, pads.top);
+            }
 
-if (loadedFrames.length > 0) {
-    if (currentFrameIdx >= loadedFrames.length) currentFrameIdx = 0;
-    const frame = loadedFrames[currentFrameIdx];
-    ctx.drawImage(frame.img, offX + pads.left, offY + pads.top);
+            if (loadedFrames.length > 0) {
+                if (currentFrameIdx >= loadedFrames.length) currentFrameIdx = 0;
+                const frame = loadedFrames[currentFrameIdx];
+                ctx.drawImage(frame.img, offX + pads.left, offY + pads.top);
 
-    if (bgImg && bgMode === "above") {
-        ctx.drawImage(bgImg, pads.left, pads.top);
-    }
-    const delayInputs = document.querySelectorAll('.delay-input');
-    const delayValue = delayInputs[currentFrameIdx] ? (parseInt(delayInputs[currentFrameIdx].value) || 10) : 10;
-    currentFrameIdx = (currentFrameIdx + 1) % loadedFrames.length;
-    animationTimer = setTimeout(loop, delayValue * 10);
-} else {
-    animationTimer = setTimeout(loop, 100);
-}
+                if (bgImg && bgMode === "above") {
+                    ctx.drawImage(bgImg, pads.left, pads.top);
+                }
+
+                const delayInputs = document.querySelectorAll('.delay-input');
+                const delay = delayInputs[currentFrameIdx] ? (parseInt(delayInputs[currentFrameIdx].value) || 10) : 10;
+
+                currentFrameIdx = (currentFrameIdx + 1) % loadedFrames.length;
+                animationTimer = setTimeout(loop, delay * 10);
+            } else {
+                animationTimer = setTimeout(loop, 100);
+            }
         };
         loop();
     }
+
     function renderList() {
-    const container = document.getElementById('fileList');
-    container.innerHTML = '';
-    container.appendChild(createDropZone(-1));
+        const container = document.getElementById('fileList');
+        container.innerHTML = '';
+        container.appendChild(createDropZone(-1));
 
-    loadedFrames.forEach((f, i) => {
-        const item = document.createElement('div');
-        item.className = 'file-item';
-        item.draggable = true;
-        item.dataset.index = i;
-        item.innerHTML = `
-            <img src="${f.img.src}">
-            <input type="number" class="delay-input" value="${f.delay || 10}" data-index="${i}">
-            <span class="name">${f.frameNumber}</span>
-            <div class="buttons-row">
-                <button class="layer-btn" title="Дублировать" onclick="duplicateFrame(${i})">❐</button>
-                <button class="layer-btn" title="Удалить" onclick="removeFrame(${i})">X</button>
-            </div>
-        `;
-        container.appendChild(item);
-
-        container.appendChild(createDropZone(i));
-    });
-
-    container.querySelectorAll('.file-item').forEach(item => {
-        item.addEventListener('dragstart', handleDragStart);
-        item.addEventListener('dragend',   handleDragEnd);
-    });
-
-    container.querySelectorAll('.drop-zone-between').forEach(zone => {
-        zone.addEventListener('dragover',  handleDragOverBetween);
-        zone.addEventListener('dragleave', handleDragLeaveBetween);
-        zone.addEventListener('drop',      handleDropBetween);
-    });
-
-    container.querySelectorAll('.delay-input').forEach(input => {
-        input.addEventListener('input', (e) => {
-            const idx = parseInt(e.target.dataset.index);
-            const val = parseInt(e.target.value) || 10;
-            if (!isNaN(idx) && loadedFrames[idx]) {
-                loadedFrames[idx].delay = val;
-            }
+        loadedFrames.forEach((f, i) => {
+            const item = document.createElement('div');
+            item.className = 'file-item';
+            item.draggable = true;
+            item.dataset.index = i;
+            item.innerHTML = `
+                <img src="${f.img.src}">
+                <input type="number" class="delay-input" value="${f.delay || 10}" data-index="${i}">
+                <span class="name">${f.name}</span>
+                <div class="buttons-row">
+                    <button class="layer-btn" title="Дублировать" onclick="duplicateFrame(${i})">❐</button>
+                    <button class="layer-btn" title="Удалить" onclick="removeFrame(${i})">X</button>
+                </div>
+            `;
+            container.appendChild(item);
+            container.appendChild(createDropZone(i));
         });
-    });
 
-    const hasFrames = loadedFrames.length > 0;
-    document.getElementById('buildBtn').disabled = !hasFrames;
-    document.getElementById('spriteBtn').disabled = !hasFrames;
-    document.getElementById('gifBtn').disabled = !hasFrames;
-}
+        container.querySelectorAll('.file-item').forEach(item => {
+            item.addEventListener('dragstart', handleDragStart);
+            item.addEventListener('dragend', handleDragEnd);
+        });
+
+        container.querySelectorAll('.drop-zone-between').forEach(zone => {
+            zone.addEventListener('dragover', handleDragOverBetween);
+            zone.addEventListener('dragleave', handleDragLeaveBetween);
+            zone.addEventListener('drop', handleDropBetween);
+        });
+
+        container.querySelectorAll('.delay-input').forEach(input => {
+            input.addEventListener('input', e => {
+                const idx = parseInt(e.target.dataset.index);
+                if (loadedFrames[idx]) loadedFrames[idx].delay = parseInt(e.target.value) || 10;
+            });
+        });
+
+        const hasFrames = loadedFrames.length > 0;
+        document.getElementById('buildBtn').disabled = !hasFrames;
+        document.getElementById('spriteBtn').disabled = !hasFrames;
+        document.getElementById('gifBtn').disabled = !hasFrames;
+    }
 
     function createDropZone(afterIndex) {
-    const zone = document.createElement('div');
-    zone.className = 'drop-zone-between';
-    zone.dataset.after = afterIndex;
-    zone.style.cssText = `
-        width: 12px;
-        flex: 0 0 12px;
-        height: 175.2px;
-        background: transparent;
-        transition: background 0.18s;
-    `;
-    return zone;
-}
+        const zone = document.createElement('div');
+        zone.className = 'drop-zone-between';
+        zone.dataset.after = afterIndex;
+        return zone;
+    }
 
     function handleDragStart(e) {
-    dragSrcEl = this.closest('.file-item');
-    if (!dragSrcEl) return;
-    e.dataTransfer.effectAllowed = 'move';
-    dragSrcEl.classList.add('ghost');
-}
+        dragSrcEl = this;
+        e.dataTransfer.effectAllowed = 'move';
+        this.classList.add('ghost');
+    }
 
-function handleDragEnd(e) {
-    document.querySelectorAll('.drop-zone-between.active').forEach(el => {
-        el.classList.remove('active');
-    });
-    if (dragSrcEl) {
-        dragSrcEl.classList.remove('ghost');
+    function handleDragEnd() {
+        document.querySelectorAll('.drop-zone-between.active').forEach(el => el.classList.remove('active'));
+        if (dragSrcEl) dragSrcEl.classList.remove('ghost');
         dragSrcEl = null;
     }
-}
 
-function handleDragOverBetween(e) {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-    document.querySelectorAll('.drop-zone-between.active').forEach(el => el.classList.remove('active'));
-    this.classList.add('active');
-}
-
-function handleDragLeaveBetween(e) {
-    this.classList.remove('active');
-}
-
-function handleDropBetween(e) {
-    e.preventDefault();
-    e.stopPropagation();
-
-    if (!dragSrcEl) return;
-
-    const from = parseInt(dragSrcEl.dataset.index);
-    const toAfter = parseInt(this.dataset.after);
-
-    let insertIndex;
-    if (toAfter === -1) {
-        insertIndex = 0;
-    } else {
-        insertIndex = toAfter + 1;
+    function handleDragOverBetween(e) {
+        e.preventDefault();
+        document.querySelectorAll('.drop-zone-between.active').forEach(el => el.classList.remove('active'));
+        this.classList.add('active');
     }
 
-    if (from < insertIndex) {
-        insertIndex--;
+    function handleDragLeaveBetween() {
+        this.classList.remove('active');
     }
 
-    if (from === insertIndex) {
+    function handleDropBetween(e) {
+        e.preventDefault();
+        if (!dragSrcEl) return;
+
+        const from = parseInt(dragSrcEl.dataset.index);
+        const toAfter = parseInt(this.dataset.after);
+
+        let insertIndex = (toAfter === -1) ? 0 : toAfter + 1;
+        if (from < insertIndex) insertIndex--;
+
+        if (from === insertIndex) {
+            handleDragEnd();
+            return;
+        }
+
+        const [moved] = loadedFrames.splice(from, 1);
+        loadedFrames.splice(insertIndex, 0, moved);
+
         handleDragEnd();
-        return;
+        renderList();
     }
 
-    const [moved] = loadedFrames.splice(from, 1);
-    loadedFrames.splice(insertIndex, 0, moved);
-
-    handleDragEnd();
-    renderList();
-}
     let isDraggingCanvas = false;
     canvas.onmousedown = () => isDraggingCanvas = true;
     window.onmouseup = () => isDraggingCanvas = false;
-    canvas.onmousemove = (e) => {
-        if (isDraggingCanvas && loadedFrames.length > 0) {
-            const rect = canvas.getBoundingClientRect();
-            const scaleX = canvas.width / rect.width;
-            const scaleY = canvas.height / rect.height;
-            offX = Math.round((e.clientX - rect.left) * scaleX - pads.left - loadedFrames[0].img.width/2);
-            offY = Math.round((e.clientY - rect.top) * scaleY - pads.top - loadedFrames[0].img.height/2);
-            document.getElementById('posX').value = offX;
-            document.getElementById('posY').value = offY;
-        }
+    canvas.onmousemove = e => {
+        if (!isDraggingCanvas || loadedFrames.length === 0) return;
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        offX = Math.round((e.clientX - rect.left) * scaleX - pads.left - loadedFrames[0].img.width / 2);
+        offY = Math.round((e.clientY - rect.top) * scaleY - pads.top - loadedFrames[0].img.height / 2);
+        document.getElementById('posX').value = offX;
+        document.getElementById('posY').value = offY;
     };
+
     async function encodePNG(cColors) {
-        const delays = Array.from(document.querySelectorAll('.delay-input')).map(i => (parseInt(i.value)||10)*10);
+        const delays = Array.from(document.querySelectorAll('.delay-input')).map(i => (parseInt(i.value)||10) * 10);
         const frames = [];
         const W = canvas.width, H = canvas.height;
+
         for (let f of loadedFrames) {
-    const temp = document.createElement('canvas');
-    temp.width = W; temp.height = H;
-    const tCtx = temp.getContext('2d');
+            const temp = document.createElement('canvas');
+            temp.width = W; temp.height = H;
+            const tCtx = temp.getContext('2d');
 
-    if (bgImg && bgMode === "behind") {
-        tCtx.drawImage(bgImg, pads.left, pads.top);
-    }
+            if (bgImg && bgMode === "behind") tCtx.drawImage(bgImg, pads.left, pads.top);
+            tCtx.drawImage(f.img, offX + pads.left, offY + pads.top);
+            if (bgImg && bgMode === "above") tCtx.drawImage(bgImg, pads.left, pads.top);
 
-    tCtx.drawImage(f.img, offX + pads.left, offY + pads.top);
-
-    if (bgImg && bgMode === "above") {
-        tCtx.drawImage(bgImg, pads.left, pads.top);
-    }
-
-    frames.push(tCtx.getImageData(0,0,W,H).data.buffer);
-}
+            frames.push(tCtx.getImageData(0,0,W,H).data.buffer);
+        }
         return UPNG.encode(frames, W, H, cColors, delays);
     }
+
     document.getElementById('buildBtn').onclick = async () => {
         const st = document.getElementById('status');
-        st.innerText = "PROCESSING...";
+        st.innerText = "ОБРАБОТКА...";
         try {
             const resBuf = await encodePNG(0);
-            displayResult(resBuf, "output.png");
-            st.innerText = " ";
-        } catch (e) { console.error(e); st.innerText = "ERROR"; }
+            displayResult(resBuf, "animation.png");
+            st.innerText = "";
+        } catch (e) { console.error(e); st.innerText = "ОШИБКА"; }
     };
+
     async function createSprite() {
         const st = document.getElementById('status');
-        st.innerText = "CREATING SPRITE...";
+        st.innerText = "СОЗДАНИЕ СПРАЙТА...";
         try {
             const W = canvas.width, H = canvas.height;
             const spriteCanvas = document.createElement('canvas');
             spriteCanvas.width = W * loadedFrames.length;
             spriteCanvas.height = H;
             const sCtx = spriteCanvas.getContext('2d');
+
             loadedFrames.forEach((f, i) => {
-    const currentX = i * W;
-    
-    if (bgImg && bgMode === "behind") {
-        sCtx.drawImage(bgImg, currentX + pads.left, pads.top);
+                const x = i * W;
+                if (bgImg && bgMode === "behind") sCtx.drawImage(bgImg, x + pads.left, pads.top);
+                sCtx.drawImage(f.img, x + offX + pads.left, x + offY + pads.top);
+                if (bgImg && bgMode === "above") sCtx.drawImage(bgImg, x + pads.left, pads.top);
+            });
+
+            spriteCanvas.toBlob(blob => {
+                displayResult(blob, "sprite_sheet.png", true);
+                st.innerText = "";
+            }, 'image/png');
+        } catch (e) { console.error(e); st.innerText = "ОШИБКА"; }
     }
-    
-    sCtx.drawImage(f.img, currentX + offX + pads.left, currentX + offY + pads.top);
-    
-    if (bgImg && bgMode === "above") {
-        sCtx.drawImage(bgImg, currentX + pads.left, pads.top);
-    }
-});
-            spriteCanvas.toBlob((blob) => { displayResult(blob, "sprite_sheet.png", true); st.innerText = " "; }, 'image/png');
-        } catch (e) { console.error(e); st.innerText = "SPRITE ERROR"; }
-    }
+
     async function optimizeAPNG() {
         const st = document.getElementById('status');
-        st.innerText = "OPTIMIZING...";
+        st.innerText = "ОПТИМИЗАЦИЯ...";
         try {
             const resBuf = await encodePNG(256);
-            displayResult(resBuf, "output_optimized.png");
-            st.innerText = "OPTIMIZED";
-        } catch (e) { st.innerText = "ERROR"; }
+            displayResult(resBuf, "animation_optimized.png");
+            st.innerText = "ОПТИМИЗИРОВАНО";
+        } catch (e) { st.innerText = "ОШИБКА"; }
     }
+
     function displayResult(data, filename, isBlob = false) {
         const blob = isBlob ? data : new Blob([data], {type:"image/png"});
-        const finalUrl = URL.createObjectURL(blob);
-        document.getElementById('finalPreview').src = finalUrl;
-        document.getElementById('dlBtn').href = finalUrl;
+        const url = URL.createObjectURL(blob);
+        document.getElementById('finalPreview').src = url;
+        document.getElementById('dlBtn').href = url;
         document.getElementById('dlBtn').download = filename;
-        document.getElementById('finalSize').innerText = "SIZE: " + (blob.size/1024).toFixed(2) + " KB";
+        document.getElementById('finalSize').innerText = `РАЗМЕР: ${(blob.size/1024).toFixed(2)} KB`;
         document.getElementById('resultContainer').style.display = "block";
         document.getElementById('resultContainer').scrollIntoView({behavior:'smooth'});
-        const isApng = filename.toLowerCase().endsWith('.png') && !filename.includes('sprite_sheet');
+
+        const isApng = filename.toLowerCase().endsWith('.png') && !filename.includes('sprite');
         document.getElementById('optBtn').style.display = isApng ? 'inline-block' : 'none';
     }
+
     async function createGIF() {
         const st = document.getElementById('status');
-        st.innerText = "GENERATING GIF...";
+        st.innerText = "СОЗДАНИЕ GIF...";
         try {
             const workerUrl = 'https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.worker.js';
             const workerResp = await fetch(workerUrl);
             const workerCode = await workerResp.text();
             const workerBlob = new Blob([workerCode], { type: 'application/javascript' });
             const blobWorkerUrl = URL.createObjectURL(workerBlob);
+
             const W = canvas.width, H = canvas.height;
-            const delays = Array.from(document.querySelectorAll('.delay-input')).map(i => (parseInt(i.value) || 10) * 10);
+            const delays = Array.from(document.querySelectorAll('.delay-input')).map(i => (parseInt(i.value)||10)*10);
+
             const gif = new GIF({
-                workers: 2, quality: 10, width: W, height: H, workerScript: blobWorkerUrl, transparent: 'rgba(0,0,0,0)'
+                workers: 2, quality: 10, width: W, height: H,
+                workerScript: blobWorkerUrl, transparent: 'rgba(0,0,0,0)'
             });
+
             for (let i = 0; i < loadedFrames.length; i++) {
                 const f = loadedFrames[i];
                 const temp = document.createElement('canvas');
                 temp.width = W; temp.height = H;
                 const tCtx = temp.getContext('2d');
-                if (bgImg) { tCtx.drawImage(bgImg, pads.left, pads.top); }
+                if (bgImg) tCtx.drawImage(bgImg, pads.left, pads.top);
                 tCtx.drawImage(f.img, offX + pads.left, offY + pads.top);
                 gif.addFrame(temp, {delay: delays[i], copy: true});
             }
-            gif.on('finished', function(blob) {
+
+            gif.on('finished', blob => {
                 displayResult(blob, "animation.gif", true);
-                st.innerText = " "; URL.revokeObjectURL(blobWorkerUrl);
+                st.innerText = "";
+                URL.revokeObjectURL(blobWorkerUrl);
             });
             gif.render();
-        } catch (e) { console.error(e); st.innerText = "GIF ERROR: " + e.message; }
+        } catch (e) { console.error(e); st.innerText = "ОШИБКА GIF"; }
     }
-    function loadImage(f) {
+
+    function loadImage(file) {
         return new Promise(res => {
-            const i = new Image();
-            i.onload = () => res(i);
-            i.src = URL.createObjectURL(f);
+            const img = new Image();
+            img.onload = () => res(img);
+            img.src = URL.createObjectURL(file);
         });
     }
+
+    window.removeBg = removeBg;
+    window.clearAllFrames = clearAllFrames;
+    window.removeFrame = removeFrame;
+    window.duplicateFrame = duplicateFrame;
+    window.createSprite = createSprite;
+    window.createGIF = createGIF;
+    window.optimizeAPNG = optimizeAPNG;
 </script>
 </body>
 </html>
